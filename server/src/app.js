@@ -33,11 +33,13 @@ const apiPrefix = process.env.API_PREFIX || '/api/v1';
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const uploadRoutes = require('./routes/upload');
+const productRoutes = require('./routes/products');
 
 // 使用路由
 app.use(`${apiPrefix}/auth`, authRoutes);
 app.use(`${apiPrefix}/users`, userRoutes);
 app.use(`${apiPrefix}/upload`, uploadRoutes);
+app.use(`${apiPrefix}/products`, productRoutes);
 
 // 健康检查端点
 app.get('/health', (req, res) => {

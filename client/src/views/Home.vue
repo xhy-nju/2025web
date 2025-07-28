@@ -210,7 +210,7 @@
         :class="{ active: activeTab === 'manage' }"
         @click="setActiveTab('manage')"
       >
-        <div class="nav-icon">⚙️</div>
+        <div class="nav-icon">📦</div>
         <div class="nav-text">管理</div>
       </div>
       <div 
@@ -236,6 +236,12 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
+import SearchBar from '@/components/SearchBar.vue'
+import CategoryTabs from '@/components/CategoryTabs.vue'
+import ProductGrid from '@/components/ProductGrid.vue'
+import MessagePage from '@/components/MessagePage.vue'
+import BottomNav from '@/components/BottomNav.vue'
+import BackToTop from '@/components/BackToTop.vue'
 
 const router = useRouter();
 const activeTab = ref("home");
@@ -673,31 +679,21 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  width: 100vw;
-  background: #f5f5f5;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  overflow: hidden;
+  background: white;
 }
 
 .content-area {
   flex: 1;
   overflow-y: auto;
-  padding-bottom: 90px;
-  width: 100%;
+  padding-bottom: 80px;
 }
 
 .tab-content {
-  height: 100%;
-  width: 100%;
-  padding: 0;
+  min-height: 100%;
+  background: white;
 }
 
 .home-content {
-  width: 100%;
   padding: 0;
 }
 
@@ -788,7 +784,7 @@ onUnmounted(() => {
 /* 产品区域样式 */
 .products-area {
   padding: 20px 15px;
-  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  background: white;
   min-height: calc(100vh - 200px);
   display: flex;
   flex-direction: column;

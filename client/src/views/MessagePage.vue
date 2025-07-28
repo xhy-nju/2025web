@@ -100,7 +100,7 @@
         <div class="nav-icon">🏠</div>
         <div class="nav-text">首页</div>
       </div>
-      <div class="nav-item" @click="handlePlayerShowClick">
+      <div class="nav-item" @click="$router.push('/player-show')">
         <div class="nav-icon">🎮</div>
         <div class="nav-text">玩家秀</div>
       </div>

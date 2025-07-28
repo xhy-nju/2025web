@@ -8,6 +8,7 @@ import Admin from '../views/Admin.vue'
 import Profile from '../views/Profile.vue'
 import Orders from '../views/Orders.vue'
 import MessagePage from '../views/MessagePage.vue'
+import PlayerShow from '../views/PlayerShow.vue'
 
 const routes = [
   {
@@ -52,6 +53,12 @@ const routes = [
     path: '/message',
     name: 'Message',
     component: MessagePage,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/player-show',
+    name: 'PlayerShow',
+    component: PlayerShow,
     meta: { requiresAuth: true }
   },
   {

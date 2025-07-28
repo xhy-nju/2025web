@@ -200,7 +200,7 @@
       <div 
         class="nav-item" 
         :class="{ active: activeTab === 'play' }"
-        @click="setActiveTab('play')"
+        @click="$router.push('/player-show')"
       >
         <div class="nav-icon">🎮</div>
         <div class="nav-text">玩家秀</div>

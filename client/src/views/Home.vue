@@ -239,7 +239,7 @@ import { useRouter } from "vue-router";
 import SearchBar from '@/components/SearchBar.vue'
 import CategoryTabs from '@/components/CategoryTabs.vue'
 import ProductGrid from '@/components/ProductGrid.vue'
-import MessagePage from '@/components/MessagePage.vue'
+import MessagePage from '@/views/MessagePage.vue'
 import BottomNav from '@/components/BottomNav.vue'
 import BackToTop from '@/components/BackToTop.vue'
 
@@ -251,7 +251,7 @@ const searchExecuted = ref(false); // 是否已执行搜索
 const actualSearchKeyword = ref(""); // 实际执行搜索的关键词
 const loading = ref(false);
 const products = ref([]);
-const categories = ref(["热门", "新品", "动漫", "游戏", "潮玩"]);
+const categories = ref(["热门", "新品", "动漫", "游戏", "电影", "潮玩"]);
 const contentArea = ref(null);
 const showBackToTop = ref(false);
 
@@ -380,7 +380,16 @@ const mockProducts = ref([
     price: "99.90",
     soldCount: 1234,
     imageUrl: "/src/static/onepiece.jpg",
-    isNew: true
+    isNew: true,
+    description: "收集路飞、索隆、娜美等经典角色",
+    items: [
+      { id: 1, name: "路飞", rarity: "SSR", probability: 5 },
+      { id: 2, name: "索隆", rarity: "SR", probability: 15 },
+      { id: 3, name: "娜美", rarity: "SR", probability: 15 },
+      { id: 4, name: "乌索普", rarity: "R", probability: 25 },
+      { id: 5, name: "山治", rarity: "R", probability: 25 },
+      { id: 6, name: "乔巴", rarity: "N", probability: 15 }
+    ]
   },
   {
     id: 2,
@@ -389,7 +398,16 @@ const mockProducts = ref([
     price: "69.90",
     soldCount: 856,
     imageUrl: "/src/static/disney.jpg",
-    isNew: false
+    isNew: false,
+    description: "梦幻公主系列，收集你最爱的迪士尼公主",
+    items: [
+      { id: 1, name: "艾莎", rarity: "SSR", probability: 5 },
+      { id: 2, name: "安娜", rarity: "SR", probability: 15 },
+      { id: 3, name: "白雪公主", rarity: "SR", probability: 15 },
+      { id: 4, name: "灰姑娘", rarity: "R", probability: 25 },
+      { id: 5, name: "贝儿", rarity: "R", probability: 25 },
+      { id: 6, name: "爱丽儿", rarity: "N", probability: 15 }
+    ]
   },
   {
     id: 3,
@@ -398,7 +416,16 @@ const mockProducts = ref([
     price: "79.90",
     soldCount: 2341,
     imageUrl: "/src/static/marvel.jpg",
-    isNew: false
+    isNew: false,
+    description: "超级英雄集结，拯救世界的力量",
+    items: [
+      { id: 1, name: "钢铁侠", rarity: "SSR", probability: 5 },
+      { id: 2, name: "美国队长", rarity: "SR", probability: 15 },
+      { id: 3, name: "雷神", rarity: "SR", probability: 15 },
+      { id: 4, name: "蜘蛛侠", rarity: "R", probability: 25 },
+      { id: 5, name: "绿巨人", rarity: "R", probability: 25 },
+      { id: 6, name: "黑寡妇", rarity: "N", probability: 15 }
+    ]
   },
   {
     id: 4,
@@ -407,84 +434,26 @@ const mockProducts = ref([
     price: "89.90",
     soldCount: 567,
     imageUrl: "/src/static/wzry.png",
-    isNew: true
-  },
-  {
-    id: 5,
-    name: "名侦探柯南盲盒",
-    category: "动漫",
-    price: "75.90",
-    soldCount: 892,
-    imageUrl: "/src/static/conan.jpg",
-    isNew: true
-  },
-  {
-    id: 6,
-    name: "龙珠超级英雄盲盒",
-    category: "动漫",
-    price: "95.90",
-    soldCount: 1456,
-    imageUrl: "/src/static/dragonball.jpg",
-    isNew: false
-  },
-  {
-    id: 7,
-    name: "新世纪福音战士盲盒",
-    category: "动漫",
-    price: "129.90",
-    soldCount: 678,
-    imageUrl: "/src/static/eva.jpg",
-    isNew: true
-  },
-  {
-    id: 8,
-    name: "哈利波特魔法盲盒",
-    category: "潮玩",
-    price: "85.90",
-    soldCount: 1123,
-    imageUrl: "/src/static/harrypotter.jpg",
-    isNew: false
-  },
-  {
-    id: 9,
-    name: "英雄联盟盲盒",
-    category: "游戏",
-    price: "79.90",
-    soldCount: 934,
-    imageUrl: "/src/static/lol.jpg",
-    isNew: true
-  },
-  {
-    id: 10,
-    name: "守望先锋英雄盲盒",
-    category: "游戏",
-    price: "89.90",
-    soldCount: 756,
-    imageUrl: "/src/static/overwatch.jpg",
-    isNew: false
-  },
-  {
-    id: 11,
-    name: "宝可梦精灵盲盒",
-    category: "动漫",
-    price: "65.90",
-    soldCount: 2156,
-    imageUrl: "/src/static/pokemon.jpg",
-    isNew: true
-  },
-  {
-    id: 12,
-    name: "星球大战盲盒",
-    category: "潮玩",
-    price: "119.90",
-    soldCount: 543,
-    imageUrl: "/src/static/starwars.jpg",
-    isNew: false
+    isNew: true,
+    description: "峡谷英雄齐聚，开启王者之路",
+    items: [
+      { id: 1, name: "李白", rarity: "SSR", probability: 5 },
+      { id: 2, name: "貂蝉", rarity: "SR", probability: 15 },
+      { id: 3, name: "韩信", rarity: "SR", probability: 15 },
+      { id: 4, name: "亚瑟", rarity: "R", probability: 25 },
+      { id: 5, name: "妲己", rarity: "R", probability: 25 },
+      { id: 6, name: "鲁班七号", rarity: "N", probability: 15 }
+    ]
   }
 ]);
 
 const setActiveTab = (tab) => {
-  activeTab.value = tab;
+  if (tab === 'manage') {
+    // 点击管理时跳转到管理员认证页面
+    router.push('/admin-auth');
+  } else {
+    activeTab.value = tab;
+  }
 };
 
 // 计算过滤后的产品列表
@@ -598,14 +567,13 @@ const handleCategoryChange = async (category) => {
 };
 
 const goToDetail = (id) => {
-  console.log("跳转到盲盒详情:", id);
-  // 这里后续会实现跳转逻辑
+  router.push(`/blindbox/${id}`);
 };
 
 // 监听滚动事件，控制回到顶部按钮的显示
 const handleScroll = () => {
   if (contentArea.value) {
-    showBackToTop.value = contentArea.value.scrollTop > 150;
+    showBackToTop.value = contentArea.value.scrollTop > 100;
   }
 };
 

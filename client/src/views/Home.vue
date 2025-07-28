@@ -251,7 +251,7 @@ const searchExecuted = ref(false); // 是否已执行搜索
 const actualSearchKeyword = ref(""); // 实际执行搜索的关键词
 const loading = ref(false);
 const products = ref([]);
-const categories = ref(["热门", "新品", "游戏", "动漫", "电影", "动画"]);
+const categories = ref(["热门", "新品", "动漫", "游戏", "潮玩"]);
 const contentArea = ref(null);
 const showBackToTop = ref(false);
 
@@ -385,7 +385,7 @@ const mockProducts = ref([
   {
     id: 2,
     name: "迪士尼公主盲盒",
-    category: "动画",
+    category: "动漫",
     price: "69.90",
     soldCount: 856,
     imageUrl: "/src/static/disney.jpg",
@@ -394,7 +394,7 @@ const mockProducts = ref([
   {
     id: 3,
     name: "漫威英雄盲盒",
-    category: "电影",
+    category: "动漫",
     price: "79.90",
     soldCount: 2341,
     imageUrl: "/src/static/marvel.jpg",
@@ -408,6 +408,78 @@ const mockProducts = ref([
     soldCount: 567,
     imageUrl: "/src/static/wzry.png",
     isNew: true
+  },
+  {
+    id: 5,
+    name: "名侦探柯南盲盒",
+    category: "动漫",
+    price: "75.90",
+    soldCount: 892,
+    imageUrl: "/src/static/conan.jpg",
+    isNew: true
+  },
+  {
+    id: 6,
+    name: "龙珠超级英雄盲盒",
+    category: "动漫",
+    price: "95.90",
+    soldCount: 1456,
+    imageUrl: "/src/static/dragonball.jpg",
+    isNew: false
+  },
+  {
+    id: 7,
+    name: "新世纪福音战士盲盒",
+    category: "动漫",
+    price: "129.90",
+    soldCount: 678,
+    imageUrl: "/src/static/eva.jpg",
+    isNew: true
+  },
+  {
+    id: 8,
+    name: "哈利波特魔法盲盒",
+    category: "潮玩",
+    price: "85.90",
+    soldCount: 1123,
+    imageUrl: "/src/static/harrypotter.jpg",
+    isNew: false
+  },
+  {
+    id: 9,
+    name: "英雄联盟盲盒",
+    category: "游戏",
+    price: "79.90",
+    soldCount: 934,
+    imageUrl: "/src/static/lol.jpg",
+    isNew: true
+  },
+  {
+    id: 10,
+    name: "守望先锋英雄盲盒",
+    category: "游戏",
+    price: "89.90",
+    soldCount: 756,
+    imageUrl: "/src/static/overwatch.jpg",
+    isNew: false
+  },
+  {
+    id: 11,
+    name: "宝可梦精灵盲盒",
+    category: "动漫",
+    price: "65.90",
+    soldCount: 2156,
+    imageUrl: "/src/static/pokemon.jpg",
+    isNew: true
+  },
+  {
+    id: 12,
+    name: "星球大战盲盒",
+    category: "潮玩",
+    price: "119.90",
+    soldCount: 543,
+    imageUrl: "/src/static/starwars.jpg",
+    isNew: false
   }
 ]);
 
@@ -533,17 +605,34 @@ const goToDetail = (id) => {
 // 监听滚动事件，控制回到顶部按钮的显示
 const handleScroll = () => {
   if (contentArea.value) {
-    showBackToTop.value = contentArea.value.scrollTop > 300;
+    showBackToTop.value = contentArea.value.scrollTop > 150;
   }
 };
 
 // 回到顶部方法
 const scrollToTop = () => {
   if (contentArea.value) {
-    contentArea.value.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
+    // 使用更快的滚动动画
+    const startPosition = contentArea.value.scrollTop;
+    const startTime = performance.now();
+    const duration = 600; // 600ms，比默认的smooth更快
+
+    const animateScroll = (currentTime) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      // 使用easeOutCubic缓动函数，开始快，结束慢，保持平滑
+      const easeOutCubic = 1 - Math.pow(1 - progress, 3);
+      const currentPosition = startPosition * (1 - easeOutCubic);
+      
+      contentArea.value.scrollTop = currentPosition;
+      
+      if (progress < 1) {
+        requestAnimationFrame(animateScroll);
+      }
+    };
+    
+    requestAnimationFrame(animateScroll);
   }
 };
 

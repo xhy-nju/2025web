@@ -93,6 +93,30 @@
         </div>
       </div>
     </div>
+
+    <!-- 底部导航 -->
+    <div class="bottom-nav">
+      <div class="nav-item" @click="$router.push('/home')">
+        <div class="nav-icon">🏠</div>
+        <div class="nav-text">首页</div>
+      </div>
+      <div class="nav-item" @click="handlePlayerShowClick">
+        <div class="nav-icon">🎮</div>
+        <div class="nav-text">玩家秀</div>
+      </div>
+      <div class="nav-item" @click="$router.push('/admin-auth')">
+        <div class="nav-icon">📦</div>
+        <div class="nav-text">管理</div>
+      </div>
+      <div class="nav-item active">
+        <div class="nav-icon">💬</div>
+        <div class="nav-text">消息</div>
+      </div>
+      <div class="nav-item" @click="$router.push('/profile')">
+        <div class="nav-icon">👤</div>
+        <div class="nav-text">我的</div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -201,6 +225,10 @@ const getAutoReply = (userMessage) => {
   return replies[Math.floor(Math.random() * replies.length)]
 }
 
+const handlePlayerShowClick = () => {
+  alert('玩家秀功能即将上线，敬请期待！')
+}
+
 const scrollToBottom = () => {
   if (chatMessages.value) {
     chatMessages.value.scrollTop = chatMessages.value.scrollHeight
@@ -230,10 +258,11 @@ const formatTime = (time) => {
 
 <style scoped>
 .message-page {
-  height: 100%;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   background: #f5f5f5;
+  padding-bottom: 70px;
 }
 
 /* 消息列表页面样式 */
@@ -579,5 +608,82 @@ const formatTime = (time) => {
   .chat-header {
     padding: 12px 15px;
   }
+}
+
+/* 底部导航 */
+.bottom-nav {
+  display: flex;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 70px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+  border-top: 1px solid rgba(102, 126, 234, 0.1);
+  z-index: 1000;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-sizing: border-box;
+}
+
+.nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 0;
+  color: #999;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  min-height: 70px;
+  box-sizing: border-box;
+}
+
+.nav-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 3px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 0 0 3px 3px;
+  transition: width 0.3s ease;
+}
+
+.nav-item.active::before {
+  width: 30px;
+}
+
+.nav-item.active {
+  color: #667eea;
+  transform: translateY(-2px);
+}
+
+.nav-item:hover {
+  color: #667eea;
+  transform: translateY(-1px);
+}
+
+.nav-icon {
+  margin-bottom: 4px;
+  font-size: 22px;
+  transition: transform 0.3s ease;
+}
+
+.nav-item.active .nav-icon {
+  transform: scale(1.1);
+}
+
+.nav-text {
+  font-size: 11px;
+  margin-top: 2px;
+  white-space: nowrap;
+  font-weight: 500;
 }
 </style>

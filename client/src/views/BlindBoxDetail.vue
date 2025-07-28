@@ -77,6 +77,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { blindBoxStore } from '../stores/blindBoxStore.js'
+import { userStore } from '../stores/userStore.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -120,10 +121,28 @@ const drawItem = () => {
         drawnItem.value = item
         showDrawResult.value = true
         isDrawing.value = false
+        
+        // 抽奖成功后创建订单
+        createOrderFromDraw(item)
         break
       }
     }
   }, 2000)
+}
+
+// 创建抽奖订单
+const createOrderFromDraw = (drawnItem) => {
+  const orderData = {
+    productId: product.value.id,
+    productName: product.value.name,
+    productImage: product.value.image,
+    price: product.value.price,
+    quantity: 1,
+    drawnItem: drawnItem,
+    status: 'pending_receipt' // 抽奖完成后直接设为待收货状态
+  }
+  
+  userStore.addOrder(orderData)
 }
 
 // 关闭结果弹窗

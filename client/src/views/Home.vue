@@ -379,6 +379,9 @@ const setActiveTab = (tab) => {
   if (tab === 'manage') {
     // 点击管理时跳转到管理员认证页面
     router.push('/admin-auth');
+  } else if (tab === 'my') {
+    // 点击我的时跳转到个人中心页面
+    router.push('/profile');
   } else {
     activeTab.value = tab;
   }

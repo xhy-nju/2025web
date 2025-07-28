@@ -5,6 +5,9 @@ import Home from '../views/Home.vue'
 import BlindBoxDetail from '../views/BlindBoxDetail.vue'
 import AdminAuth from '../views/AdminAuth.vue'
 import Admin from '../views/Admin.vue'
+import Profile from '../views/Profile.vue'
+import Orders from '../views/Orders.vue'
+import MessagePage from '../views/MessagePage.vue'
 
 const routes = [
   {
@@ -31,6 +34,24 @@ const routes = [
     path: '/blindbox/:id',
     name: 'BlindBoxDetail',
     component: BlindBoxDetail,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: Profile,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/orders',
+    name: 'Orders',
+    component: Orders,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/message',
+    name: 'Message',
+    component: MessagePage,
     meta: { requiresAuth: true }
   },
   {

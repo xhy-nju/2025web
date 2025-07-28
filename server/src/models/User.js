@@ -39,11 +39,47 @@ const userSchema = new mongoose.Schema({
   lastLogin: {
     type: Date
   },
+  // 个人信息
+  nickname: {
+    type: String,
+    default: function() {
+      return this.username;
+    },
+    trim: true,
+    maxlength: [30, '昵称最多30个字符']
+  },
+  phone: {
+    type: String,
+    match: [/^1[3-9]\d{9}$/, '请输入有效的手机号码']
+  },
+  gender: {
+    type: String,
+    enum: ['male', 'female', 'other'],
+    default: 'other'
+  },
+  birthday: {
+    type: Date
+  },
+  bio: {
+    type: String,
+    maxlength: [200, '个人简介最多200个字符']
+  },
+  
   // 盲盒系统相关字段
   coins: {
     type: Number,
-    default: 1000, // 新用户默认1000金币
+    default: 1280, // 新用户默认1280金币
     min: [0, '金币不能为负数']
+  },
+  points: {
+    type: Number,
+    default: 0, // 积分
+    min: [0, '积分不能为负数']
+  },
+  coupons: {
+    type: Number,
+    default: 0, // 优惠券数量
+    min: [0, '优惠券数量不能为负数']
   },
   level: {
     type: Number,
@@ -60,11 +96,75 @@ const userSchema = new mongoose.Schema({
     default: 0,
     min: [0, '抽奖次数不能为负数']
   },
-  inventory: [{
-    itemId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Item'
+  totalSpent: {
+    type: Number,
+    default: 0,
+    min: [0, '总消费金额不能为负数']
+  },
+  
+  // 收货地址
+  addresses: [{
+    isDefault: {
+      type: Boolean,
+      default: false
     },
+    receiverName: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    receiverPhone: {
+      type: String,
+      required: true,
+      match: [/^1[3-9]\d{9}$/, '请输入有效的手机号码']
+    },
+    province: {
+      type: String,
+      required: true
+    },
+    city: {
+      type: String,
+      required: true
+    },
+    district: {
+      type: String,
+      required: true
+    },
+    street: {
+      type: String,
+      required: true
+    },
+    zipCode: {
+      type: String,
+      match: [/^\d{6}$/, '请输入有效的邮政编码']
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+  
+  // 收藏的盲盒
+  favorites: [{
+    blindBoxId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'BlindBox'
+    },
+    addedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+  
+  // 物品库存
+  inventory: [{
+    blindBoxId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'BlindBox'
+    },
+    itemName: String,
+    itemRarity: String,
+    itemImageUrl: String,
     quantity: {
       type: Number,
       default: 1,
@@ -74,7 +174,27 @@ const userSchema = new mongoose.Schema({
       type: Date,
       default: Date.now
     }
-  }]
+  }],
+  
+  // 统计信息
+  stats: {
+    totalOrders: {
+      type: Number,
+      default: 0
+    },
+    totalPosts: {
+      type: Number,
+      default: 0
+    },
+    totalLikes: {
+      type: Number,
+      default: 0
+    },
+    totalComments: {
+      type: Number,
+      default: 0
+    }
+  }
 }, {
   timestamps: true // 自动添加 createdAt 和 updatedAt
 });

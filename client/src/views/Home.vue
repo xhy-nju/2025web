@@ -76,100 +76,9 @@
         </div>
       </div>
       <div v-else-if="activeTab === 'message'" class="tab-content">
-        <div class="message-page">
-          <!-- 消息列表页面 -->
-          <div v-if="!currentChat" class="message-list-page">
-            <div class="message-header">
-              <h2>消息</h2>
-              <div class="message-actions">
-                <button class="new-message-btn" @click="showNewMessageModal = true">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20">
-                    <path fill="currentColor" d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-            
-            <div class="message-list">
-              <div 
-                v-for="chat in messageList" 
-                :key="chat.id"
-                class="message-item"
-                @click="openChat(chat)"
-              >
-                <div class="avatar">
-                  <img :src="chat.avatar" :alt="chat.name">
-                  <div v-if="chat.unreadCount > 0" class="unread-badge">{{ chat.unreadCount }}</div>
-                </div>
-                <div class="message-content">
-                  <div class="message-top">
-                    <div class="contact-name">{{ chat.name }}</div>
-                    <div class="message-time">{{ formatTime(chat.lastMessageTime) }}</div>
-                  </div>
-                  <div class="last-message">{{ chat.lastMessage }}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 聊天页面 -->
-          <div v-else class="chat-page">
-            <div class="chat-header">
-              <button class="back-btn" @click="currentChat = null">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-                  <path fill="currentColor" d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"/>
-                </svg>
-              </button>
-              <div class="chat-contact">
-                <img :src="currentChat.avatar" :alt="currentChat.name" class="contact-avatar">
-                <div class="contact-info">
-                  <div class="contact-name">{{ currentChat.name }}</div>
-                  <div class="contact-status">在线</div>
-                </div>
-              </div>
-              <div class="chat-actions">
-                <button class="action-btn">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20">
-                    <path fill="currentColor" d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M11,16.5L18,9.5L16.59,8.09L11,13.67L7.91,10.59L6.5,12L11,16.5Z"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <div class="chat-messages" ref="chatMessages">
-              <div 
-                v-for="message in currentChat.messages" 
-                :key="message.id"
-                class="message-bubble"
-                :class="{ 'own-message': message.isOwn }"
-              >
-                <div class="message-text">{{ message.text }}</div>
-                <div class="message-time">{{ formatTime(message.time) }}</div>
-              </div>
-            </div>
-
-            <div class="chat-input">
-              <div class="input-container">
-                <button class="emoji-btn">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-                    <path fill="currentColor" d="M12,2C6.47,2 2,6.47 2,12C2,17.53 6.47,22 12,22A10,10 0 0,0 22,12C22,6.47 17.5,2 12,2M12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20M17,9A1,1 0 0,1 16,10A1,1 0 0,1 15,9A1,1 0 0,1 16,8A1,1 0 0,1 17,9M9,9A1,1 0 0,1 8,10A1,1 0 0,1 7,9A1,1 0 0,1 8,8A1,1 0 0,1 9,9M12,17.5C14.33,17.5 16.31,16.04 17.11,14H6.89C7.69,16.04 9.67,17.5 12,17.5Z"/>
-                  </svg>
-                </button>
-                <input 
-                  v-model="newMessage" 
-                  type="text" 
-                  placeholder="输入消息..."
-                  @keyup.enter="sendMessage"
-                  class="message-input"
-                >
-                <button class="send-btn" @click="sendMessage" :disabled="!newMessage.trim()">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-                    <path fill="currentColor" d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
+        <div class="page-content">
+          <h2>消息</h2>
+          <p>正在跳转到消息页面...</p>
         </div>
       </div>
       <div v-else-if="activeTab === 'my'" class="tab-content">
@@ -215,8 +124,7 @@
       </div>
       <div 
         class="nav-item" 
-        :class="{ active: activeTab === 'message' }"
-        @click="setActiveTab('message')"
+        @click="$router.push('/message')"
       >
         <div class="nav-icon">💬</div>
         <div class="nav-text">消息</div>
@@ -236,12 +144,6 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
-import SearchBar from '@/components/SearchBar.vue'
-import CategoryTabs from '@/components/CategoryTabs.vue'
-import ProductGrid from '@/components/ProductGrid.vue'
-import MessagePage from '@/views/MessagePage.vue'
-import BottomNav from '@/components/BottomNav.vue'
-import BackToTop from '@/components/BackToTop.vue'
 import { blindBoxStore } from '@/stores/blindBoxStore.js'
 
 const router = useRouter();
@@ -256,122 +158,6 @@ const categories = ref(["热门", "新品", "动漫", "游戏", "电影", "潮�
 const contentArea = ref(null);
 const showBackToTop = ref(false);
 
-// 消息功能相关数据
-const currentChat = ref(null);
-const newMessage = ref("");
-const showNewMessageModal = ref(false);
-const chatMessages = ref(null);
-
-// 模拟消息列表数据
-const messageList = ref([
-  {
-    id: 1,
-    name: "盲盒小助手",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=helper",
-    lastMessage: "您的海贼王盲盒已发货，请注意查收！",
-    lastMessageTime: new Date(Date.now() - 1000 * 60 * 30), // 30分钟前
-    unreadCount: 1,
-    messages: [
-      {
-        id: 1,
-        text: "您好！欢迎来到盲盒世界！",
-        time: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2小时前
-        isOwn: false
-      },
-      {
-        id: 2,
-        text: "您的海贼王盲盒已发货，请注意查收！",
-        time: new Date(Date.now() - 1000 * 60 * 30), // 30分钟前
-        isOwn: false
-      }
-    ]
-  },
-  {
-    id: 2,
-    name: "客服小美",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=service",
-    lastMessage: "好的，我会为您处理退换货申请",
-    lastMessageTime: new Date(Date.now() - 1000 * 60 * 60 * 3), // 3小时前
-    unreadCount: 0,
-    messages: [
-      {
-        id: 1,
-        text: "您好，请问有什么可以帮助您的吗？",
-        time: new Date(Date.now() - 1000 * 60 * 60 * 4), // 4小时前
-        isOwn: false
-      },
-      {
-        id: 2,
-        text: "我想申请退换货",
-        time: new Date(Date.now() - 1000 * 60 * 60 * 3.5), // 3.5小时前
-        isOwn: true
-      },
-      {
-        id: 3,
-        text: "好的，我会为您处理退换货申请",
-        time: new Date(Date.now() - 1000 * 60 * 60 * 3), // 3小时前
-        isOwn: false
-      }
-    ]
-  },
-  {
-    id: 3,
-    name: "盲盒达人",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=expert",
-    lastMessage: "这个系列真的很不错！",
-    lastMessageTime: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1天前
-    unreadCount: 2,
-    messages: [
-      {
-        id: 1,
-        text: "你好！看到你也喜欢收集盲盒",
-        time: new Date(Date.now() - 1000 * 60 * 60 * 25), // 25小时前
-        isOwn: false
-      },
-      {
-        id: 2,
-        text: "是的！我特别喜欢动漫系列",
-        time: new Date(Date.now() - 1000 * 60 * 60 * 24.5), // 24.5小时前
-        isOwn: true
-      },
-      {
-        id: 3,
-        text: "这个系列真的很不错！",
-        time: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1天前
-        isOwn: false
-      }
-    ]
-  },
-  {
-    id: 4,
-    name: "交易伙伴",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=trader",
-    lastMessage: "交易愉快！",
-    lastMessageTime: new Date(Date.now() - 1000 * 60 * 60 * 48), // 2天前
-    unreadCount: 0,
-    messages: [
-      {
-        id: 1,
-        text: "你好，我想和你交换盲盒",
-        time: new Date(Date.now() - 1000 * 60 * 60 * 50), // 50小时前
-        isOwn: false
-      },
-      {
-        id: 2,
-        text: "可以的，你想要哪个？",
-        time: new Date(Date.now() - 1000 * 60 * 60 * 49), // 49小时前
-        isOwn: true
-      },
-      {
-        id: 3,
-        text: "交易愉快！",
-        time: new Date(Date.now() - 1000 * 60 * 60 * 48), // 2天前
-        isOwn: false
-      }
-    ]
-  }
-]);
-
 // 使用共享数据存储
 const allProducts = computed(() => blindBoxStore.getReactiveProducts());
 
@@ -382,6 +168,9 @@ const setActiveTab = (tab) => {
   } else if (tab === 'my') {
     // 点击我的时跳转到个人中心页面
     router.push('/profile');
+  } else if (tab === 'message') {
+    // 点击消息时跳转到消息页面
+    router.push('/message');
   } else {
     activeTab.value = tab;
   }
@@ -532,107 +321,6 @@ const scrollToTop = () => {
     };
     
     requestAnimationFrame(animateScroll);
-  }
-};
-
-// 消息功能方法
-const openChat = (chat) => {
-  currentChat.value = chat;
-  // 标记消息为已读
-  chat.unreadCount = 0;
-  // 滚动到底部
-  setTimeout(() => {
-    scrollToBottom();
-  }, 100);
-};
-
-const sendMessage = () => {
-  if (!newMessage.value.trim() || !currentChat.value) return;
-  
-  const message = {
-    id: Date.now(),
-    text: newMessage.value.trim(),
-    time: new Date(),
-    isOwn: true
-  };
-  
-  currentChat.value.messages.push(message);
-  currentChat.value.lastMessage = message.text;
-  currentChat.value.lastMessageTime = message.time;
-  
-  // 清空输入框
-  newMessage.value = "";
-  
-  // 滚动到底部
-  setTimeout(() => {
-    scrollToBottom();
-  }, 100);
-  
-  // 模拟对方回复（仅用于演示）
-  setTimeout(() => {
-    if (currentChat.value) {
-      const autoReply = {
-        id: Date.now() + 1,
-        text: getAutoReply(message.text),
-        time: new Date(),
-        isOwn: false
-      };
-      currentChat.value.messages.push(autoReply);
-      currentChat.value.lastMessage = autoReply.text;
-      currentChat.value.lastMessageTime = autoReply.time;
-      
-      setTimeout(() => {
-        scrollToBottom();
-      }, 100);
-    }
-  }, 1000 + Math.random() * 2000); // 1-3秒后回复
-};
-
-const getAutoReply = (userMessage) => {
-  const replies = [
-    "收到您的消息，我会尽快处理！",
-    "好的，我明白了。",
-    "感谢您的反馈！",
-    "我会为您查询相关信息。",
-    "请稍等，我来为您处理。",
-    "您说得对，我会注意的。",
-    "谢谢您的建议！"
-  ];
-  
-  if (userMessage.includes("盲盒")) {
-    return "关于盲盒的问题，我很乐意为您解答！";
-  } else if (userMessage.includes("退货") || userMessage.includes("退换")) {
-    return "关于退换货，我会为您详细说明流程。";
-  } else if (userMessage.includes("发货") || userMessage.includes("物流")) {
-    return "我会为您查询物流信息，请稍等。";
-  }
-  
-  return replies[Math.floor(Math.random() * replies.length)];
-};
-
-const scrollToBottom = () => {
-  if (chatMessages.value) {
-    chatMessages.value.scrollTop = chatMessages.value.scrollHeight;
-  }
-};
-
-const formatTime = (time) => {
-  const now = new Date();
-  const diff = now - time;
-  const minutes = Math.floor(diff / (1000 * 60));
-  const hours = Math.floor(diff / (1000 * 60 * 60));
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  
-  if (minutes < 1) {
-    return "刚刚";
-  } else if (minutes < 60) {
-    return `${minutes}分钟前`;
-  } else if (hours < 24) {
-    return `${hours}小时前`;
-  } else if (days < 7) {
-    return `${days}天前`;
-  } else {
-    return time.toLocaleDateString();
   }
 };
 

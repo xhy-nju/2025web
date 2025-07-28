@@ -25,6 +25,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // 静态文件服务
 app.use('/uploads', express.static('uploads'));
+app.use('/images', express.static('images'));
 
 // API路由
 const apiPrefix = process.env.API_PREFIX || '/api/v1';
@@ -34,12 +35,18 @@ const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const uploadRoutes = require('./routes/upload');
 const productRoutes = require('./routes/products');
+const blindBoxRoutes = require('./routes/blindBoxes');
+const orderRoutes = require('./routes/orders');
+const playerShowRoutes = require('./routes/playerShow');
 
 // 使用路由
 app.use(`${apiPrefix}/auth`, authRoutes);
 app.use(`${apiPrefix}/users`, userRoutes);
 app.use(`${apiPrefix}/upload`, uploadRoutes);
 app.use(`${apiPrefix}/products`, productRoutes);
+app.use(`${apiPrefix}/blind-boxes`, blindBoxRoutes);
+app.use(`${apiPrefix}/orders`, orderRoutes);
+app.use(`${apiPrefix}/player-show`, playerShowRoutes);
 
 // 健康检查端点
 app.get('/health', (req, res) => {
@@ -62,7 +69,11 @@ app.get('/', (req, res) => {
       health: '/health',
       auth: `${process.env.API_PREFIX || '/api/v1'}/auth`,
       users: `${process.env.API_PREFIX || '/api/v1'}/users`,
-      upload: `${process.env.API_PREFIX || '/api/v1'}/upload`
+      upload: `${process.env.API_PREFIX || '/api/v1'}/upload`,
+      products: `${process.env.API_PREFIX || '/api/v1'}/products`,
+      blindBoxes: `${process.env.API_PREFIX || '/api/v1'}/blind-boxes`,
+      orders: `${process.env.API_PREFIX || '/api/v1'}/orders`,
+      playerShow: `${process.env.API_PREFIX || '/api/v1'}/player-show`
     }
   });
 });

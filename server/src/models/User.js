@@ -38,7 +38,43 @@ const userSchema = new mongoose.Schema({
   },
   lastLogin: {
     type: Date
-  }
+  },
+  // 盲盒系统相关字段
+  coins: {
+    type: Number,
+    default: 1000, // 新用户默认1000金币
+    min: [0, '金币不能为负数']
+  },
+  level: {
+    type: Number,
+    default: 1,
+    min: [1, '等级不能小于1']
+  },
+  experience: {
+    type: Number,
+    default: 0,
+    min: [0, '经验值不能为负数']
+  },
+  totalDraws: {
+    type: Number,
+    default: 0,
+    min: [0, '抽奖次数不能为负数']
+  },
+  inventory: [{
+    itemId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Item'
+    },
+    quantity: {
+      type: Number,
+      default: 1,
+      min: [1, '物品数量不能小于1']
+    },
+    obtainedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }]
 }, {
   timestamps: true // 自动添加 createdAt 和 updatedAt
 });

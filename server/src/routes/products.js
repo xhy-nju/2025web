@@ -80,7 +80,11 @@ router.post('/search', (req, res) => {
     }
     
     // 根据分类过滤
-    if (category && category !== "热门") {
+    if (category === "新品") {
+      // 新品分类：显示所有 isNew 为 true 的产品
+      filteredProducts = filteredProducts.filter(product => product.isNew === true);
+    } else if (category && category !== "热门") {
+      // 其他分类：按 category 字段过滤
       filteredProducts = filteredProducts.filter(product => 
         product.category === category
       );
@@ -110,7 +114,11 @@ router.post('/category', (req, res) => {
     let filteredProducts = mockProducts;
     
     // 根据分类过滤
-    if (category && category !== "热门") {
+    if (category === "新品") {
+      // 新品分类：显示所有 isNew 为 true 的产品
+      filteredProducts = filteredProducts.filter(product => product.isNew === true);
+    } else if (category && category !== "热门") {
+      // 其他分类：按 category 字段过滤
       filteredProducts = filteredProducts.filter(product => 
         product.category === category
       );

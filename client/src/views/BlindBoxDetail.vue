@@ -9,35 +9,31 @@
     </div>
 
     <!-- 盲盒信息 -->
-    <div class="box-info" v-if="blindBox">
+    <div class="box-info" v-if="product">
       <div class="box-image">
-        <img :src="blindBox.imageUrl" :alt="blindBox.name" />
+        <img :src="product.imageUrl" :alt="product.name" />
       </div>
       <div class="box-details">
-        <h1>{{ blindBox.name }}</h1>
-        <p class="description">{{ blindBox.description }}</p>
-        <div class="price">¥{{ blindBox.price }}</div>
-        <div class="sold-count">已售 {{ blindBox.soldCount }} 件</div>
+        <h1>{{ product.name }}</h1>
+        <p class="description">{{ product.description }}</p>
+        <div class="price">¥{{ product.price }}</div>
+        <div class="sold-count">已售 {{ product.soldCount }} 件</div>
       </div>
     </div>
 
     <!-- 盲盒内容物 -->
-    <div class="items-section" v-if="blindBox">
+    <div class="items-section" v-if="product">
       <h2>盲盒内容物</h2>
       <div class="items-grid">
         <div 
-          v-for="item in blindBox.items" 
+          v-for="item in product.items" 
           :key="item.id" 
           class="item-card"
           :class="getRarityClass(item.rarity)"
         >
           <div class="item-image">
-            <!-- 使用SVG占位图 -->
-            <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="80" height="80" rx="8" fill="#f0f0f0"/>
-              <circle cx="40" cy="30" r="12" fill="#ddd"/>
-              <path d="M20 65C20 55 28 50 40 50C52 50 60 55 60 65" fill="#ddd"/>
-            </svg>
+            <!-- 显示内容物的实际图片 -->
+            <img :src="item.imageUrl" :alt="item.name" />
           </div>
           <div class="item-info">
             <div class="item-name">{{ item.name }}</div>
@@ -52,7 +48,7 @@
     <div class="lottery-section">
       <button 
         class="lottery-button" 
-        @click="drawLottery"
+        @click="drawItem"
         :disabled="isDrawing"
       >
         {{ isDrawing ? '抽奖中...' : '开始抽奖' }}
@@ -60,128 +56,61 @@
     </div>
 
     <!-- 抽奖结果弹窗 -->
-    <div v-if="showResult" class="result-modal" @click="closeResult">
+    <div v-if="showDrawResult" class="result-modal" @click="closeDrawResult">
       <div class="result-content" @click.stop>
         <h3>恭喜获得</h3>
         <div class="result-item" :class="getRarityClass(drawnItem.rarity)">
           <div class="result-image">
-            <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="120" height="120" rx="12" fill="#f0f0f0"/>
-              <circle cx="60" cy="45" r="18" fill="#ddd"/>
-              <path d="M30 95C30 80 42 75 60 75C78 75 90 80 90 95" fill="#ddd"/>
-            </svg>
+            <!-- 显示抽中内容物的实际图片 -->
+            <img :src="drawnItem.imageUrl" :alt="drawnItem.name" />
           </div>
           <div class="result-name">{{ drawnItem.name }}</div>
           <div class="result-rarity">{{ drawnItem.rarity }}</div>
         </div>
-        <button class="close-button" @click="closeResult">确定</button>
+        <button class="close-button" @click="closeDrawResult">确定</button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { blindBoxStore } from '../stores/blindBoxStore.js'
 
 const route = useRoute()
 const router = useRouter()
 
-const blindBox = ref(null)
-const isDrawing = ref(false)
-const showResult = ref(false)
-const drawnItem = ref(null)
+// 使用共享数据存储
+const product = computed(() => {
+  const id = parseInt(route.params.id)
+  return blindBoxStore.getProductById(id)
+})
 
-// 模拟盲盒数据（与Home.vue保持一致）
-const mockProducts = [
-  {
-    id: 1,
-    name: "海贼王盲盒",
-    category: "动漫",
-    price: "99.90",
-    soldCount: 1234,
-    imageUrl: "/src/static/onepiece.jpg",
-    isNew: true,
-    description: "收集路飞、索隆、娜美等经典角色",
-    items: [
-      { id: 1, name: "路飞", rarity: "SSR", probability: 5 },
-      { id: 2, name: "索隆", rarity: "SR", probability: 15 },
-      { id: 3, name: "娜美", rarity: "SR", probability: 15 },
-      { id: 4, name: "乌索普", rarity: "R", probability: 25 },
-      { id: 5, name: "山治", rarity: "R", probability: 25 },
-      { id: 6, name: "乔巴", rarity: "N", probability: 15 }
-    ]
-  },
-  {
-    id: 2,
-    name: "迪士尼公主盲盒",
-    category: "动漫",
-    price: "69.90",
-    soldCount: 856,
-    imageUrl: "/src/static/disney.jpg",
-    isNew: false,
-    description: "梦幻公主系列，收集你最爱的迪士尼公主",
-    items: [
-      { id: 1, name: "艾莎", rarity: "SSR", probability: 5 },
-      { id: 2, name: "安娜", rarity: "SR", probability: 15 },
-      { id: 3, name: "白雪公主", rarity: "SR", probability: 15 },
-      { id: 4, name: "灰姑娘", rarity: "R", probability: 25 },
-      { id: 5, name: "贝儿", rarity: "R", probability: 25 },
-      { id: 6, name: "爱丽儿", rarity: "N", probability: 15 }
-    ]
-  },
-  {
-    id: 3,
-    name: "漫威英雄盲盒",
-    category: "动漫",
-    price: "79.90",
-    soldCount: 2341,
-    imageUrl: "/src/static/marvel.jpg",
-    isNew: false,
-    description: "超级英雄集结，拯救世界的力量",
-    items: [
-      { id: 1, name: "钢铁侠", rarity: "SSR", probability: 5 },
-      { id: 2, name: "美国队长", rarity: "SR", probability: 15 },
-      { id: 3, name: "雷神", rarity: "SR", probability: 15 },
-      { id: 4, name: "蜘蛛侠", rarity: "R", probability: 25 },
-      { id: 5, name: "绿巨人", rarity: "R", probability: 25 },
-      { id: 6, name: "黑寡妇", rarity: "N", probability: 15 }
-    ]
-  },
-  {
-    id: 4,
-    name: "王者荣耀盲盒",
-    category: "游戏",
-    price: "89.90",
-    soldCount: 567,
-    imageUrl: "/src/static/wzry.png",
-    isNew: true,
-    description: "峡谷英雄齐聚，开启王者之路",
-    items: [
-      { id: 1, name: "李白", rarity: "SSR", probability: 5 },
-      { id: 2, name: "貂蝉", rarity: "SR", probability: 15 },
-      { id: 3, name: "韩信", rarity: "SR", probability: 15 },
-      { id: 4, name: "亚瑟", rarity: "R", probability: 25 },
-      { id: 5, name: "妲己", rarity: "R", probability: 25 },
-      { id: 6, name: "鲁班七号", rarity: "N", probability: 15 }
-    ]
-  }
-]
+const isDrawing = ref(false)
+const showDrawResult = ref(false)
+const drawnItem = ref(null)
 
 // 获取稀有度样式类
 const getRarityClass = (rarity) => {
-  return `rarity-${rarity.toLowerCase()}`
+  const rarityMap = {
+    'SSR': 'ssr',
+    'SR': 'sr', 
+    'R': 'r',
+    'N': 'n'
+  }
+  return rarityMap[rarity] || 'n'
 }
 
 // 抽奖功能
-const drawLottery = () => {
-  if (isDrawing.value) return
+const drawItem = () => {
+  if (!product.value || !product.value.items) return
   
   isDrawing.value = true
   
   // 模拟抽奖延迟
   setTimeout(() => {
-    const items = blindBox.value.items
+    const items = product.value.items
     const random = Math.random() * 100
     let currentProbability = 0
     
@@ -189,32 +118,28 @@ const drawLottery = () => {
       currentProbability += item.probability
       if (random <= currentProbability) {
         drawnItem.value = item
+        showDrawResult.value = true
+        isDrawing.value = false
         break
       }
     }
-    
-    isDrawing.value = false
-    showResult.value = true
   }, 2000)
 }
 
 // 关闭结果弹窗
-const closeResult = () => {
-  showResult.value = false
+const closeDrawResult = () => {
+  showDrawResult.value = false
   drawnItem.value = null
 }
 
 // 返回上一页
 const goBack = () => {
-  router.go(-1)
+  router.back()
 }
 
 // 组件挂载时获取盲盒数据
 onMounted(() => {
-  const boxId = parseInt(route.params.id)
-  blindBox.value = mockProducts.find(product => product.id === boxId)
-  
-  if (!blindBox.value) {
+  if (!product.value) {
     router.push('/')
   }
 })
@@ -319,6 +244,13 @@ onMounted(() => {
   margin-bottom: 15px;
   display: flex;
   justify-content: center;
+}
+
+.item-image img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
 }
 
 .item-name {
@@ -442,6 +374,13 @@ onMounted(() => {
   margin-bottom: 15px;
   display: flex;
   justify-content: center;
+}
+
+.result-image img {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 12px;
 }
 
 .result-name {

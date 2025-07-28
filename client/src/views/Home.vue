@@ -242,6 +242,7 @@ import ProductGrid from '@/components/ProductGrid.vue'
 import MessagePage from '@/views/MessagePage.vue'
 import BottomNav from '@/components/BottomNav.vue'
 import BackToTop from '@/components/BackToTop.vue'
+import { blindBoxStore } from '@/stores/blindBoxStore.js'
 
 const router = useRouter();
 const activeTab = ref("home");
@@ -371,81 +372,8 @@ const messageList = ref([
   }
 ]);
 
-// 模拟盲盒数据
-const mockProducts = ref([
-  {
-    id: 1,
-    name: "海贼王盲盒",
-    category: "动漫",
-    price: "99.90",
-    soldCount: 1234,
-    imageUrl: "/src/static/onepiece.jpg",
-    isNew: true,
-    description: "收集路飞、索隆、娜美等经典角色",
-    items: [
-      { id: 1, name: "路飞", rarity: "SSR", probability: 5 },
-      { id: 2, name: "索隆", rarity: "SR", probability: 15 },
-      { id: 3, name: "娜美", rarity: "SR", probability: 15 },
-      { id: 4, name: "乌索普", rarity: "R", probability: 25 },
-      { id: 5, name: "山治", rarity: "R", probability: 25 },
-      { id: 6, name: "乔巴", rarity: "N", probability: 15 }
-    ]
-  },
-  {
-    id: 2,
-    name: "迪士尼公主盲盒",
-    category: "动漫",
-    price: "69.90",
-    soldCount: 856,
-    imageUrl: "/src/static/disney.jpg",
-    isNew: false,
-    description: "梦幻公主系列，收集你最爱的迪士尼公主",
-    items: [
-      { id: 1, name: "艾莎", rarity: "SSR", probability: 5 },
-      { id: 2, name: "安娜", rarity: "SR", probability: 15 },
-      { id: 3, name: "白雪公主", rarity: "SR", probability: 15 },
-      { id: 4, name: "灰姑娘", rarity: "R", probability: 25 },
-      { id: 5, name: "贝儿", rarity: "R", probability: 25 },
-      { id: 6, name: "爱丽儿", rarity: "N", probability: 15 }
-    ]
-  },
-  {
-    id: 3,
-    name: "漫威英雄盲盒",
-    category: "动漫",
-    price: "79.90",
-    soldCount: 2341,
-    imageUrl: "/src/static/marvel.jpg",
-    isNew: false,
-    description: "超级英雄集结，拯救世界的力量",
-    items: [
-      { id: 1, name: "钢铁侠", rarity: "SSR", probability: 5 },
-      { id: 2, name: "美国队长", rarity: "SR", probability: 15 },
-      { id: 3, name: "雷神", rarity: "SR", probability: 15 },
-      { id: 4, name: "蜘蛛侠", rarity: "R", probability: 25 },
-      { id: 5, name: "绿巨人", rarity: "R", probability: 25 },
-      { id: 6, name: "黑寡妇", rarity: "N", probability: 15 }
-    ]
-  },
-  {
-    id: 4,
-    name: "王者荣耀盲盒",
-    category: "游戏",
-    price: "89.90",
-    soldCount: 567,
-    imageUrl: "/src/static/wzry.png",
-    isNew: true,
-    description: "峡谷英雄齐聚，开启王者之路",
-    items: [
-      { id: 1, name: "李白", rarity: "SSR", probability: 5 },
-      { id: 2, name: "貂蝉", rarity: "SR", probability: 15 },
-      { id: 3, name: "韩信", rarity: "SR", probability: 15 },
-      { id: 4, name: "亚瑟", rarity: "R", probability: 25 },
-      { id: 5, name: "妲己", rarity: "R", probability: 25 },
-      { id: 6, name: "鲁班七号", rarity: "N", probability: 15 }
-    ]
-  }
-]);
+// 使用共享数据存储
+const allProducts = computed(() => blindBoxStore.getReactiveProducts());
 
 const setActiveTab = (tab) => {
   if (tab === 'manage') {
@@ -458,7 +386,7 @@ const setActiveTab = (tab) => {
 
 // 计算过滤后的产品列表
 const filteredProducts = computed(() => {
-  let result = mockProducts.value;
+  let result = allProducts.value;
   
   // 只有在执行搜索后才根据搜索关键词过滤
   if (searchExecuted.value && actualSearchKeyword.value.trim()) {
@@ -712,6 +640,9 @@ onMounted(async () => {
     router.push("/login");
     return;
   }
+
+  // 初始化产品数据
+  products.value = [...allProducts.value];
 
   // 添加滚动监听
   if (contentArea.value) {

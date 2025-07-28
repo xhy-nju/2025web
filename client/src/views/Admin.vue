@@ -199,15 +199,32 @@
             <label>内容物设置</label>
             <div class="items-section">
               <div v-for="(item, index) in formData.items" :key="index" class="item-row">
-                <input v-model="item.name" placeholder="物品名称" required>
-                <select v-model="item.rarity" required>
-                  <option value="">稀有度</option>
-                  <option value="SSR">SSR</option>
-                  <option value="SR">SR</option>
-                  <option value="R">R</option>
-                  <option value="N">N</option>
-                </select>
-                <input v-model.number="item.probability" type="number" placeholder="概率%" required>
+                <div class="item-basic-info">
+                  <input v-model="item.name" placeholder="物品名称" required>
+                  <select v-model="item.rarity" required>
+                    <option value="">稀有度</option>
+                    <option value="SSR">SSR</option>
+                    <option value="SR">SR</option>
+                    <option value="R">R</option>
+                    <option value="N">N</option>
+                  </select>
+                  <input v-model.number="item.probability" type="number" placeholder="概率%" required>
+                </div>
+                <div class="item-image-upload">
+                  <input 
+                    :ref="`itemFileInput${index}`" 
+                    type="file" 
+                    accept="image/*" 
+                    @change="(e) => handleFormItemImageUpload(e, index)"
+                    style="display: none"
+                  >
+                  <button type="button" @click="$refs[`itemFileInput${index}`][0].click()" class="upload-btn small">
+                    选择图片
+                  </button>
+                  <div v-if="item.imageUrl" class="item-image-preview">
+                    <img :src="item.imageUrl" alt="内容物预览图">
+                  </div>
+                </div>
                 <button type="button" @click="removeItem(index)" class="remove-item-btn">×</button>
               </div>
               <button type="button" @click="addItem" class="add-item-btn">添加内容物</button>
@@ -227,6 +244,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { blindBoxStore } from '../stores/blindBoxStore.js'
 
 const router = useRouter()
 
@@ -246,85 +264,13 @@ const formData = ref({
   description: '',
   imageUrl: '',
   items: [
-    { name: '', rarity: '', probability: 0 }
+    { name: '', rarity: '', probability: 0, imageUrl: '' }
   ]
 })
 
-// 盲盒数据（从Home.vue复制过来）
-const products = ref([
-  {
-    id: 1,
-    name: "海贼王盲盒",
-    category: "动漫",
-    price: "99.90",
-    soldCount: 1234,
-    imageUrl: "/src/static/onepiece.jpg",
-    isNew: true,
-    description: "收集路飞、索隆、娜美等经典角色",
-    items: [
-      { id: 1, name: "路飞", rarity: "SSR", probability: 5 },
-      { id: 2, name: "索隆", rarity: "SR", probability: 15 },
-      { id: 3, name: "娜美", rarity: "SR", probability: 15 },
-      { id: 4, name: "乌索普", rarity: "R", probability: 25 },
-      { id: 5, name: "山治", rarity: "R", probability: 25 },
-      { id: 6, name: "乔巴", rarity: "N", probability: 15 }
-    ]
-  },
-  {
-    id: 2,
-    name: "迪士尼公主盲盒",
-    category: "动漫",
-    price: "69.90",
-    soldCount: 856,
-    imageUrl: "/src/static/disney.jpg",
-    isNew: false,
-    description: "梦幻公主系列，收集你最爱的迪士尼公主",
-    items: [
-      { id: 1, name: "艾莎", rarity: "SSR", probability: 5 },
-      { id: 2, name: "安娜", rarity: "SR", probability: 15 },
-      { id: 3, name: "白雪公主", rarity: "SR", probability: 15 },
-      { id: 4, name: "灰姑娘", rarity: "R", probability: 25 },
-      { id: 5, name: "贝儿", rarity: "R", probability: 25 },
-      { id: 6, name: "爱丽儿", rarity: "N", probability: 15 }
-    ]
-  },
-  {
-    id: 3,
-    name: "漫威英雄盲盒",
-    category: "动漫",
-    price: "79.90",
-    soldCount: 2341,
-    imageUrl: "/src/static/marvel.jpg",
-    isNew: false,
-    description: "超级英雄集结，拯救世界的力量",
-    items: [
-      { id: 1, name: "钢铁侠", rarity: "SSR", probability: 5 },
-      { id: 2, name: "美国队长", rarity: "SR", probability: 15 },
-      { id: 3, name: "雷神", rarity: "SR", probability: 15 },
-      { id: 4, name: "蜘蛛侠", rarity: "R", probability: 25 },
-      { id: 5, name: "绿巨人", rarity: "R", probability: 25 },
-      { id: 6, name: "黑寡妇", rarity: "N", probability: 15 }
-    ]
-  },
-  {
-    id: 4,
-    name: "王者荣耀盲盒",
-    category: "游戏",
-    price: "89.90",
-    soldCount: 567,
-    imageUrl: "/src/static/wzry.png",
-    isNew: true,
-    description: "峡谷英雄齐聚，开启王者之路",
-    items: [
-      { id: 1, name: "李白", rarity: "SSR", probability: 5 },
-      { id: 2, name: "貂蝉", rarity: "SR", probability: 15 },
-      { id: 3, name: "韩信", rarity: "SR", probability: 15 },
-      { id: 4, name: "亚瑟", rarity: "R", probability: 25 },
-      { id: 5, name: "妲己", rarity: "R", probability: 25 },
-      { id: 6, name: "鲁班七号", rarity: "N", probability: 15 }
-    ]
-  }
-])
+// 使用共享数据存储
+const products = computed(() => blindBoxStore.getReactiveProducts())
+
 
 // 计算属性
 const totalProducts = computed(() => products.value.length)
@@ -355,7 +301,9 @@ const toggleProductSelection = (id) => {
 
 const confirmDelete = () => {
   if (confirm(`确定要删除选中的 ${selectedProducts.value.length} 个盲盒吗？`)) {
-    products.value = products.value.filter(p => !selectedProducts.value.includes(p.id))
+    selectedProducts.value.forEach(id => {
+      blindBoxStore.deleteProduct(id)
+    })
     selectedProducts.value = []
     alert('删除成功！')
   }
@@ -391,7 +339,7 @@ const resetForm = () => {
     description: '',
     imageUrl: '',
     items: [
-      { name: '', rarity: '', probability: 0 }
+      { name: '', rarity: '', probability: 0, imageUrl: '' }
     ]
   }
 }
@@ -407,8 +355,37 @@ const handleImageUpload = (event) => {
   }
 }
 
+// 处理表单中内容物图片上传
+const handleFormItemImageUpload = (event, index) => {
+  const file = event.target.files[0]
+  if (file) {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      formData.value.items[index].imageUrl = e.target.result
+    }
+    reader.readAsDataURL(file)
+  }
+}
+
+// 处理产品列表中内容物图片上传
+const handleItemImageUpload = (event, productIndex, itemIndex) => {
+  const file = event.target.files[0]
+  if (file) {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const imageUrl = e.target.result
+      const product = products.value[productIndex]
+      const item = product.items[itemIndex]
+      
+      // 使用共享数据存储更新图片
+      blindBoxStore.updateItemImage(product.id, item.id, imageUrl)
+    }
+    reader.readAsDataURL(file)
+  }
+}
+
 const addItem = () => {
-  formData.value.items.push({ name: '', rarity: '', probability: 0 })
+  formData.value.items.push({ name: '', rarity: '', probability: 0, imageUrl: '' })
 }
 
 const removeItem = (index) => {
@@ -427,24 +404,21 @@ const saveProduct = () => {
 
   if (showEditModal.value) {
     // 更新产品
-    const index = products.value.findIndex(p => p.id === editingProduct.value.id)
-    if (index > -1) {
-      products.value[index] = {
-        ...editingProduct.value,
-        ...formData.value,
-        items: formData.value.items.map((item, idx) => ({ ...item, id: idx + 1 }))
-      }
+    const updatedProduct = {
+      ...editingProduct.value,
+      ...formData.value,
+      items: formData.value.items.map((item, idx) => ({ ...item, id: idx + 1 }))
     }
+    blindBoxStore.updateProduct(editingProduct.value.id, updatedProduct)
     alert('更新成功！')
   } else {
     // 添加新产品
     const newProduct = {
-      id: Math.max(...products.value.map(p => p.id)) + 1,
       ...formData.value,
       isNew: true,
       items: formData.value.items.map((item, idx) => ({ ...item, id: idx + 1 }))
     }
-    products.value.push(newProduct)
+    blindBoxStore.addProduct(newProduct)
     alert('添加成功！')
   }
   
@@ -822,22 +796,65 @@ onMounted(() => {
 }
 
 .item-row {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr auto;
+  display: flex;
+  flex-direction: column;
   gap: 10px;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
+  padding: 15px;
+  border: 1px solid #e1e5e9;
+  border-radius: 8px;
+  position: relative;
+}
+
+.item-basic-info {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 10px;
   align-items: center;
+}
+
+.item-image-upload {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.upload-btn.small {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.item-image-preview {
+  display: flex;
+  align-items: center;
+}
+
+.item-image-preview img {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #e1e5e9;
 }
 
 .remove-item-btn {
   background: #f44336;
   color: white;
   border: none;
-  width: 30px;
-  height: 30px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 12px;
+  position: absolute;
+  top: 8px;
+  right: 8px;
 }
 
 .add-item-btn {

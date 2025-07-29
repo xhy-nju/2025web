@@ -4,7 +4,9 @@
     <div class="header">
       <button @click="$router.go(-1)" class="back-btn">←</button>
       <h1>我的订单</h1>
-      <div class="placeholder"></div>
+      <button @click="refreshOrders" class="refresh-btn" :disabled="loading">
+        {{ loading ? '⟳' : '↻' }}
+      </button>
     </div>
 
     <!-- 状态筛选 -->
@@ -29,12 +31,12 @@
       <div v-else class="order-items">
         <div 
           v-for="order in filteredOrders" 
-          :key="order.id" 
+          :key="order._id" 
           class="order-card"
-          @click="viewOrderDetail(order.id)"
+          @click="viewOrderDetail(order._id)"
         >
           <div class="order-header">
-            <span class="order-id">订单号：{{ order.id }}</span>
+            <span class="order-id">订单号：{{ order.orderNumber }}</span>
             <span :class="`status-${order.status}`">{{ getStatusText(order.status) }}</span>
           </div>
           
@@ -59,27 +61,27 @@
           <div class="order-actions">
             <button 
               v-if="order.status === 'pending_payment'" 
-              @click.stop="payOrder(order.id)"
+              @click.stop="payOrder(order._id)"
               class="action-btn primary"
             >
               立即付款
             </button>
             <button 
               v-if="order.status === 'pending_receipt'" 
-              @click.stop="confirmReceipt(order.id)"
+              @click.stop="confirmReceipt(order._id)"
               class="action-btn primary"
             >
               确认收货
             </button>
             <button 
               v-if="order.status === 'completed'" 
-              @click.stop="reviewOrder(order.id)"
+              @click.stop="reviewOrder(order._id)"
               class="action-btn secondary"
             >
               评价
             </button>
             <button 
-              @click.stop="viewOrderDetail(order.id)"
+              @click.stop="viewOrderDetail(order._id)"
               class="action-btn secondary"
             >
               查看详情
@@ -101,7 +103,7 @@
             <h4>订单信息</h4>
             <div class="info-row">
               <span class="label">订单号：</span>
-              <span class="value">{{ selectedOrder.id }}</span>
+              <span class="value">{{ selectedOrder.orderNumber }}</span>
             </div>
             <div class="info-row">
               <span class="label">订单状态：</span>
@@ -178,7 +180,7 @@
           </div>
 
           <div v-if="selectedOrder.status === 'pending_receipt'" class="detail-actions">
-            <button @click="confirmReceipt(selectedOrder.id)" class="confirm-btn">
+            <button @click="confirmReceipt(selectedOrder._id)" class="confirm-btn">
               确认收货
             </button>
           </div>
@@ -213,7 +215,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 
@@ -271,27 +273,74 @@ const fetchOrders = async () => {
   try {
     loading.value = true
     const token = localStorage.getItem('token')
+    console.log('当前token:', token)
+    
     if (!token) {
+      console.log('没有token，跳转到登录页')
       router.push('/login')
       return
     }
 
+    console.log('开始获取订单数据...')
     const response = await axios.get('/api/v1/orders', {
       headers: {
         'Authorization': `Bearer ${token}`
       }
     })
 
+    console.log('订单API响应:', response.data)
+
     if (response.data.success) {
-      orders.value = response.data.data.orders || []
+      const rawOrders = response.data.data.orders || []
+      console.log('原始订单数据:', rawOrders)
+      console.log('订单数量:', rawOrders.length)
+      
+      // 转换订单数据格式
+      orders.value = rawOrders.map(order => {
+        const firstItem = order.items && order.items[0]
+        const blindBox = firstItem?.blindBoxId
+        const drawnItem = firstItem?.drawnItems && firstItem.drawnItems[0]
+        
+        console.log('处理订单:', order._id, '第一个商品:', firstItem, '抽奖结果:', drawnItem)
+        
+        return {
+          ...order, // 保留原始订单数据
+          id: order._id,
+          orderNumber: order.orderNumber,
+          status: order.status,
+          createTime: new Date(order.createdAt).toLocaleString(),
+          payTime: order.paymentTime ? new Date(order.paymentTime).toLocaleString() : null,
+          shipTime: order.shipmentTime ? new Date(order.shipmentTime).toLocaleString() : null,
+          receiveTime: order.receiptTime ? new Date(order.receiptTime).toLocaleString() : null,
+          productName: firstItem?.blindBoxName || blindBox?.name || '未知商品',
+          productImage: blindBox?.imageUrl || '/images/default.jpg',
+          price: order.totalAmount,
+          quantity: order.items.reduce((sum, item) => sum + item.quantity, 0),
+          drawnItem: drawnItem ? {
+            name: drawnItem.name,
+            imageUrl: drawnItem.imageUrl,
+            rarity: drawnItem.rarity,
+            description: drawnItem.description
+          } : null
+        }
+      })
+      
+      console.log('转换后的订单数据:', orders.value)
+      console.log('最终订单数量:', orders.value.length)
     } else {
       console.error('获取订单失败:', response.data.message)
     }
   } catch (error) {
     console.error('获取订单出错:', error)
+    console.error('错误详情:', error.response?.data)
   } finally {
     loading.value = false
   }
+}
+
+// 刷新订单列表
+const refreshOrders = async () => {
+  await fetchOrders()
 }
 
 // 方法
@@ -326,7 +375,33 @@ const viewOrderDetail = async (orderId) => {
     })
 
     if (response.data.success) {
-      selectedOrder.value = response.data.data
+      const order = response.data.data
+      const firstItem = order.items && order.items[0]
+      const blindBox = firstItem?.blindBoxId
+      const drawnItem = firstItem?.drawnItems && firstItem.drawnItems[0]
+      
+      // 转换订单详情数据格式
+      selectedOrder.value = {
+        ...order, // 保留原始订单数据
+        id: order._id,
+        orderNumber: order.orderNumber,
+        status: order.status,
+        createTime: new Date(order.createdAt).toLocaleString(),
+        payTime: order.paymentTime ? new Date(order.paymentTime).toLocaleString() : null,
+        shipTime: order.shipmentTime ? new Date(order.shipmentTime).toLocaleString() : null,
+        receiveTime: order.receiptTime ? new Date(order.receiptTime).toLocaleString() : null,
+        productName: firstItem?.blindBoxName || blindBox?.name || '未知商品',
+        productImage: blindBox?.imageUrl || '/images/default.jpg',
+        price: order.totalAmount,
+        quantity: order.items.reduce((sum, item) => sum + item.quantity, 0),
+        drawnItem: drawnItem ? {
+          name: drawnItem.name,
+          imageUrl: drawnItem.imageUrl,
+          rarity: drawnItem.rarity,
+          description: drawnItem.description
+        } : null
+      }
+      
       showOrderDetail.value = true
     } else {
       console.error('获取订单详情失败:', response.data.message)
@@ -392,6 +467,24 @@ onMounted(async () => {
   
   // 获取订单数据
   await fetchOrders()
+  
+  // 监听订单创建事件
+  window.addEventListener('orderCreated', handleOrderCreated)
+})
+
+// 监听订单创建事件的处理函数
+const handleOrderCreated = (event) => {
+  console.log('收到订单创建事件:', event.detail)
+  // 延迟一下再刷新，确保后端数据已保存
+  setTimeout(() => {
+    console.log('自动刷新订单数据...')
+    fetchOrders()
+  }, 1000)
+}
+
+// 组件卸载时移除事件监听
+onUnmounted(() => {
+  window.removeEventListener('orderCreated', handleOrderCreated)
 })
 </script>
 
@@ -421,6 +514,32 @@ onMounted(async () => {
   cursor: pointer;
   color: #333;
   padding: 5px;
+}
+
+.refresh-btn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #667eea;
+  padding: 5px;
+  transition: all 0.3s;
+}
+
+.refresh-btn:hover:not(:disabled) {
+  color: #5a6fd8;
+  transform: rotate(180deg);
+}
+
+.refresh-btn:disabled {
+  color: #ccc;
+  cursor: not-allowed;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .header h1 {

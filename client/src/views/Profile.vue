@@ -80,9 +80,9 @@
       <div v-else class="order-list">
         <div 
           v-for="order in recentOrders" 
-          :key="order.id" 
+          :key="order._id" 
           class="order-item"
-          @click="viewOrderDetail(order.id)"
+          @click="viewOrderDetail(order._id)"
         >
           <img :src="order.productImage" :alt="order.productName" class="order-image" />
           <div class="order-info">
@@ -156,53 +156,53 @@
         </div>
         <div v-if="selectedOrder" class="order-detail">
           <div class="order-header">
-            <span class="order-id">订单号：{{ selectedOrder.id }}</span>
+            <span class="order-id">订单号：{{ selectedOrder.orderNumber }}</span>
             <span :class="`status-${selectedOrder.status}`">{{ getStatusText(selectedOrder.status) }}</span>
           </div>
           
           <div class="product-info">
-            <img :src="selectedOrder.productImage" :alt="selectedOrder.productName" />
+            <img :src="selectedOrder.items?.[0]?.blindBoxId?.imageUrl || '/images/default.jpg'" :alt="selectedOrder.items?.[0]?.blindBoxName" />
             <div class="product-details">
-              <h4>{{ selectedOrder.productName }}</h4>
-              <p>数量：{{ selectedOrder.quantity }}</p>
-              <p class="price">¥{{ selectedOrder.price }}</p>
+              <h4>{{ selectedOrder.items?.[0]?.blindBoxName || '未知商品' }}</h4>
+              <p>数量：{{ selectedOrder.items?.reduce((sum, item) => sum + item.quantity, 0) || 1 }}</p>
+              <p class="price">¥{{ selectedOrder.totalAmount }}</p>
             </div>
           </div>
 
-          <div v-if="selectedOrder.drawnItem" class="drawn-result">
+          <div v-if="selectedOrder.items?.[0]?.drawnItems?.[0]" class="drawn-result">
             <h4>抽奖结果</h4>
             <div class="drawn-item">
-              <img :src="selectedOrder.drawnItem.imageUrl" :alt="selectedOrder.drawnItem.name" />
+              <img :src="selectedOrder.items[0].drawnItems[0].imageUrl" :alt="selectedOrder.items[0].drawnItems[0].name" />
               <div class="item-info">
-                <span class="item-name">{{ selectedOrder.drawnItem.name }}</span>
-                <span :class="`rarity-${selectedOrder.drawnItem.rarity.toLowerCase()}`">
-                  {{ selectedOrder.drawnItem.rarity }}
+                <span class="item-name">{{ selectedOrder.items[0].drawnItems[0].name }}</span>
+                <span :class="`rarity-${selectedOrder.items[0].drawnItems[0].rarity.toLowerCase()}`">
+                  {{ selectedOrder.items[0].drawnItems[0].rarity }}
                 </span>
               </div>
             </div>
           </div>
 
           <div class="order-timeline">
-            <div class="timeline-item" v-if="selectedOrder.createTime">
-              <span class="time">{{ selectedOrder.createTime }}</span>
+            <div class="timeline-item" v-if="selectedOrder.createdAt">
+              <span class="time">{{ new Date(selectedOrder.createdAt).toLocaleString() }}</span>
               <span class="event">订单创建</span>
             </div>
-            <div class="timeline-item" v-if="selectedOrder.payTime">
-              <span class="time">{{ selectedOrder.payTime }}</span>
+            <div class="timeline-item" v-if="selectedOrder.paymentTime">
+              <span class="time">{{ new Date(selectedOrder.paymentTime).toLocaleString() }}</span>
               <span class="event">支付完成</span>
             </div>
-            <div class="timeline-item" v-if="selectedOrder.shipTime">
-              <span class="time">{{ selectedOrder.shipTime }}</span>
+            <div class="timeline-item" v-if="selectedOrder.shipmentTime">
+              <span class="time">{{ new Date(selectedOrder.shipmentTime).toLocaleString() }}</span>
               <span class="event">商品发货</span>
             </div>
-            <div class="timeline-item" v-if="selectedOrder.receiveTime">
-              <span class="time">{{ selectedOrder.receiveTime }}</span>
+            <div class="timeline-item" v-if="selectedOrder.receiptTime">
+              <span class="time">{{ new Date(selectedOrder.receiptTime).toLocaleString() }}</span>
               <span class="event">确认收货</span>
             </div>
           </div>
 
           <div v-if="selectedOrder.status === 'pending_receipt'" class="order-actions">
-            <button @click="confirmReceipt(selectedOrder.id)" class="confirm-btn">
+            <button @click="confirmReceipt(selectedOrder._id)" class="confirm-btn">
               确认收货
             </button>
           </div>
@@ -342,7 +342,18 @@ const fetchOrders = async () => {
     })
 
     if (response.data.success) {
-      orders.value = response.data.data.orders || []
+      const rawOrders = response.data.data.orders || []
+      // 映射订单数据结构以适配前端显示
+      orders.value = rawOrders.map(order => ({
+        ...order,
+        id: order._id, // 添加id字段以兼容现有代码
+        productName: order.items[0]?.blindBoxName || '未知商品',
+        productImage: order.items[0]?.blindBoxId?.imageUrl || '/images/default.jpg',
+        price: order.totalAmount,
+        quantity: order.items.reduce((sum, item) => sum + item.quantity, 0),
+        createTime: new Date(order.createdAt).toLocaleString(),
+        drawnItem: order.items[0]?.drawnItems?.[0] || null
+      }))
     } else {
       console.error('获取订单失败:', response.data.message)
     }

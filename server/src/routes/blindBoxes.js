@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const BlindBox = require('../models/BlindBox');
+const Order = require('../models/Order');
 const { auth, adminAuth } = require('../middleware/auth');
 
 // 获取所有盲盒（分页）
@@ -189,10 +190,31 @@ router.post('/:id/draw', auth, async (req, res) => {
     // 增加盲盒销售数量
     blindBox.soldCount += 1;
 
+    // 创建订单记录
+    const order = new Order({
+      orderNumber: Order.generateOrderNumber(),
+      userId: req.user._id,
+      items: [{
+        blindBoxId: blindBox._id,
+        blindBoxName: blindBox.name,
+        price: blindBox.price,
+        quantity: 1,
+        drawnItems: [drawnItem]
+      }],
+      totalAmount: blindBox.price,
+      status: 'pending_receipt', // 购买后默认为待收货状态
+      paymentMethod: 'balance',
+      paymentTime: new Date(),
+      shipmentTime: new Date() // 虚拟商品立即发货
+    });
+
+    console.log('创建订单，订单号:', order.orderNumber);
+
     // 保存更改
     await Promise.all([
       req.user.save(),
-      blindBox.save()
+      blindBox.save(),
+      order.save()
     ]);
 
     res.json({
@@ -200,7 +222,9 @@ router.post('/:id/draw', auth, async (req, res) => {
       data: {
         drawnItem,
         remainingCoins: req.user.coins,
-        totalDraws: req.user.totalDraws
+        totalDraws: req.user.totalDraws,
+        orderNumber: order.orderNumber,
+        orderId: order._id
       }
     });
   } catch (error) {
@@ -360,5 +384,8 @@ router.get('/admin/all', adminAuth, async (req, res) => {
     });
   }
 });
+
+// 触发重启
+console.log('订单状态已更新为待收货模式');
 
 module.exports = router;

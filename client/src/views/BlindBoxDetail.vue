@@ -127,6 +127,13 @@ const drawItem = async () => {
   isDrawing.value = true
   
   try {
+    // 获取认证token
+    const token = localStorage.getItem('token')
+    if (!token) {
+      router.push('/login')
+      return
+    }
+    
     // 使用 _id 或 id 字段
     const productId = product.value._id || product.value.id;
     console.log('抽奖 - 使用的产品ID:', productId);
@@ -135,9 +142,22 @@ const drawItem = async () => {
       throw new Error('产品ID不存在');
     }
     
-    const response = await axios.post(`/api/v1/blind-boxes/${productId}/draw`)
+    console.log('发送抽奖请求到:', `/api/v1/blind-boxes/${productId}/draw`)
+    const response = await axios.post(`/api/v1/blind-boxes/${productId}/draw`, {}, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+    
+    console.log('抽奖API响应:', response.data)
+    console.log('响应数据详情:', JSON.stringify(response.data, null, 2))
     
     if (response.data.success) {
+      console.log('抽奖成功，数据:', response.data.data)
+      console.log('抽中的物品:', response.data.data.drawnItem)
+      console.log('剩余金币:', response.data.data.remainingCoins)
+      console.log('订单号:', response.data.data.orderNumber)
+      console.log('订单ID:', response.data.data.orderId)
       drawnItem.value = response.data.data.drawnItem
       showDrawResult.value = true
       
@@ -150,11 +170,32 @@ const drawItem = async () => {
       window.dispatchEvent(new CustomEvent('userCoinsUpdated', { 
         detail: { coins: response.data.data.remainingCoins } 
       }))
+      
+      // 显示订单创建成功提示
+      if (response.data.data.orderNumber) {
+        console.log('订单创建成功，订单号:', response.data.data.orderNumber)
+        console.log('订单ID:', response.data.data.orderId)
+        
+        // 触发订单数据刷新事件
+        window.dispatchEvent(new CustomEvent('orderCreated', { 
+          detail: { 
+            orderNumber: response.data.data.orderNumber,
+            orderId: response.data.data.orderId
+          } 
+        }))
+        
+        // 可以在这里添加一个提示，告诉用户订单已创建
+        setTimeout(() => {
+          alert(`抽奖成功！订单已创建，订单号：${response.data.data.orderNumber}`)
+        }, 2000) // 延迟2秒显示，让用户先看到抽奖结果
+      }
     } else {
+      console.error('抽奖失败:', response.data.message)
       alert(response.data.message || '抽奖失败')
     }
   } catch (error) {
     console.error('抽奖失败:', error)
+    console.error('错误详情:', error.response?.data)
     alert(error.response?.data?.message || '抽奖失败，请稍后再试')
   } finally {
     isDrawing.value = false

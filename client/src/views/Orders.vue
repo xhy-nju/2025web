@@ -86,6 +86,13 @@
             >
               查看详情
             </button>
+            <button 
+              v-if="order.status === 'cancelled' || order.status === 'completed'" 
+              @click.stop="deleteOrder(order._id)"
+              class="action-btn danger"
+            >
+              删除
+            </button>
           </div>
         </div>
       </div>
@@ -179,9 +186,20 @@
             </div>
           </div>
 
-          <div v-if="selectedOrder.status === 'pending_receipt'" class="detail-actions">
-            <button @click="confirmReceipt(selectedOrder._id)" class="confirm-btn">
+          <div class="detail-actions">
+            <button 
+              v-if="selectedOrder.status === 'pending_receipt'" 
+              @click="confirmReceipt(selectedOrder._id)" 
+              class="confirm-btn"
+            >
               确认收货
+            </button>
+            <button 
+              v-if="selectedOrder.status === 'cancelled' || selectedOrder.status === 'completed'" 
+              @click="deleteOrder(selectedOrder._id)" 
+              class="delete-btn"
+            >
+              删除订单
             </button>
           </div>
         </div>
@@ -451,6 +469,35 @@ const confirmReceipt = async (orderId) => {
 
 const reviewOrder = (orderId) => {
   alert('评价功能待实现')
+}
+
+const deleteOrder = async (orderId) => {
+  if (confirm('确认删除此订单？删除后无法恢复。')) {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await axios.delete(`/api/v1/orders/${orderId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.data.success) {
+        alert('订单删除成功！')
+        closeOrderDetail()
+        // 重新获取订单数据
+        await fetchOrders()
+      } else {
+        alert('删除订单失败: ' + response.data.message)
+      }
+    } catch (error) {
+      console.error('删除订单出错:', error)
+      if (error.response && error.response.data && error.response.data.message) {
+        alert('删除订单失败: ' + error.response.data.message)
+      } else {
+        alert('删除订单失败，请稍后重试')
+      }
+    }
+  }
 }
 
 const handlePlayerShowClick = () => {
@@ -750,6 +797,15 @@ onUnmounted(() => {
   background: #e9ecef;
 }
 
+.action-btn.danger {
+  background: #dc3545;
+  color: white;
+}
+
+.action-btn.danger:hover {
+  background: #c82333;
+}
+
 /* 状态样式 */
 .status-pending_payment { color: #ff9800; font-weight: 500; }
 .status-pending_shipment { color: #2196f3; font-weight: 500; }
@@ -962,6 +1018,9 @@ onUnmounted(() => {
   text-align: center;
   padding-top: 20px;
   border-top: 1px solid #e9ecef;
+  display: flex;
+  gap: 15px;
+  justify-content: center;
 }
 
 .confirm-btn {
@@ -972,6 +1031,26 @@ onUnmounted(() => {
   border-radius: 8px;
   cursor: pointer;
   font-size: 16px;
+  transition: background 0.3s;
+}
+
+.confirm-btn:hover {
+  background: #45a049;
+}
+
+.delete-btn {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.3s;
+}
+
+.delete-btn:hover {
+  background: #c82333;
 }
 
 /* 底部导航 */

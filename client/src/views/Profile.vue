@@ -244,9 +244,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
-import { userStore } from '../stores/userStore.js'
+import { useUserStore } from '../stores/userStore.js'
 
 const router = useRouter()
+const userStore = useUserStore()
 
 // 响应式数据
 const showEditProfile = ref(false)

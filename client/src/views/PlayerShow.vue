@@ -3,33 +3,61 @@
     <!-- 头部 -->
     <div class="header">
       <h1>玩家秀</h1>
-      <button @click="showCreatePost = true" class="create-btn">发帖</button>
+      <button class="create-btn" @click="showCreatePost = true">
+        ✏️ 发帖
+      </button>
+    </div>
+
+    <!-- 排序选择 -->
+    <div class="sort-tabs">
+      <button 
+        class="sort-tab" 
+        :class="{ active: playerShowStore.sortType === 'latest' }"
+        @click="changeSortType('latest')"
+      >
+        最新
+      </button>
+      <button 
+        class="sort-tab" 
+        :class="{ active: playerShowStore.sortType === 'hot' }"
+        @click="changeSortType('hot')"
+      >
+        热门
+      </button>
     </div>
 
     <!-- 帖子列表 -->
     <div class="posts-list">
-      <div v-if="posts.length === 0" class="empty-state">
+      <!-- 加载状态 -->
+      <div v-if="playerShowStore.loading && playerShowStore.posts.length === 0" class="loading-state">
+        <div class="loading-spinner">⏳</div>
+        <p>加载中...</p>
+      </div>
+
+      <!-- 空状态 -->
+      <div v-else-if="!playerShowStore.loading && playerShowStore.posts.length === 0" class="empty-state">
         <div class="empty-icon">📝</div>
         <p>还没有帖子，快来发布第一个吧！</p>
       </div>
+
+      <!-- 帖子列表 -->
       <div v-else class="post-items">
-        <div 
-          v-for="post in posts" 
-          :key="post.id" 
-          class="post-card"
-        >
-          <!-- 用户信息 -->
+        <div v-for="post in playerShowStore.posts" :key="post.id" class="post-card">
+          <!-- 帖子头部 -->
           <div class="post-header">
-            <img :src="post.user.avatar" :alt="post.user.nickname" class="user-avatar" />
+            <img :src="post.user.avatar" :alt="post.user.nickname" class="user-avatar">
             <div class="user-info">
               <h3 class="username">{{ post.user.nickname }}</h3>
-              <span class="post-time">{{ post.createTime }}</span>
+              <p class="post-time">{{ post.createTime }}</p>
             </div>
           </div>
 
           <!-- 帖子内容 -->
           <div class="post-content">
+            <h4 v-if="post.title" class="post-title">{{ post.title }}</h4>
             <p class="post-text">{{ post.content }}</p>
+            
+            <!-- 图片 -->
             <div v-if="post.images && post.images.length > 0" class="post-images">
               <img 
                 v-for="(image, index) in post.images" 
@@ -38,51 +66,48 @@
                 :alt="`图片${index + 1}`"
                 class="post-image"
                 @click="previewImage(image)"
-              />
+              >
+            </div>
+
+            <!-- 关联盲盒 -->
+            <div v-if="post.blindBox" class="blindbox-link" @click="goToBlindBox(post.blindBox.id)">
+              <img :src="post.blindBox.image" :alt="post.blindBox.name" class="blindbox-image">
+              <div class="blindbox-info">
+                <h4>{{ post.blindBox.name }}</h4>
+                <p class="blindbox-price">¥{{ post.blindBox.price }}</p>
+                <p v-if="post.blindBox.drawnItem" class="drawn-item">抽中：{{ post.blindBox.drawnItem }}</p>
+              </div>
+              <span class="link-arrow">→</span>
             </div>
           </div>
 
-          <!-- 盲盒链接 -->
-          <div v-if="post.blindBox" class="blindbox-link" @click="goToBlindBox(post.blindBox.id)">
-            <img :src="post.blindBox.image" :alt="post.blindBox.name" class="blindbox-image" />
-            <div class="blindbox-info">
-              <h4>{{ post.blindBox.name }}</h4>
-              <p class="blindbox-price">¥{{ post.blindBox.price }}</p>
-            </div>
-            <div class="link-arrow">→</div>
-          </div>
-
-          <!-- 互动区域 -->
+          <!-- 帖子操作 -->
           <div class="post-actions">
             <button 
-              :class="['action-btn', 'like-btn', { active: post.isLiked }]"
-              @click="toggleLike(post.id)"
+              class="action-btn" 
+              :class="{ active: post.isLiked }"
+              @click="handleToggleLike(post.id)"
             >
               <span class="action-icon">{{ post.isLiked ? '❤️' : '🤍' }}</span>
               <span class="action-text">{{ post.likes }}</span>
             </button>
-            <button 
-              class="action-btn comment-btn"
-              @click="showComments(post.id)"
-            >
+            
+            <button class="action-btn" @click="playerShowStore.toggleComments(post.id)">
               <span class="action-icon">💬</span>
               <span class="action-text">{{ post.comments.length }}</span>
             </button>
-            <button class="action-btn share-btn" @click="sharePost(post.id)">
-              <span class="action-icon">📤</span>
-              <span class="action-text">分享</span>
+
+            <button class="action-btn">
+              <span class="action-icon">👁️</span>
+              <span class="action-text">{{ post.viewsCount || 0 }}</span>
             </button>
           </div>
 
-          <!-- 评论区域 -->
+          <!-- 评论区 -->
           <div v-if="post.showComments" class="comments-section">
-            <div class="comments-list">
-              <div 
-                v-for="comment in post.comments" 
-                :key="comment.id"
-                class="comment-item"
-              >
-                <img :src="comment.user.avatar" :alt="comment.user.nickname" class="comment-avatar" />
+            <div v-if="post.comments.length > 0" class="comments-list">
+              <div v-for="comment in post.comments" :key="comment.id" class="comment-item">
+                <img :src="comment.user.avatar" :alt="comment.user.nickname" class="comment-avatar">
                 <div class="comment-content">
                   <span class="comment-user">{{ comment.user.nickname }}</span>
                   <p class="comment-text">{{ comment.content }}</p>
@@ -90,50 +115,83 @@
                 </div>
               </div>
             </div>
+            
             <div class="comment-input-area">
               <input 
-                v-model="newComment[post.id]"
+                v-model="newComment[post.id]" 
                 type="text" 
-                placeholder="写评论..."
+                placeholder="写评论..." 
                 class="comment-input"
-                @keyup.enter="addComment(post.id)"
-              />
-              <button @click="addComment(post.id)" class="send-btn">发送</button>
+                @keyup.enter="handleAddComment(post.id)"
+              >
+              <button class="send-btn" @click="handleAddComment(post.id)">发送</button>
             </div>
           </div>
+        </div>
+
+        <!-- 加载更多 -->
+        <div v-if="playerShowStore.hasMore && !playerShowStore.loading" class="load-more">
+          <button class="load-more-btn" @click="loadMore">加载更多</button>
+        </div>
+
+        <!-- 底部加载状态 -->
+        <div v-if="playerShowStore.loading && playerShowStore.posts.length > 0" class="loading-more">
+          <div class="loading-spinner">⏳</div>
+          <p>加载更多...</p>
         </div>
       </div>
     </div>
 
     <!-- 发帖弹窗 -->
-    <div v-if="showCreatePost" class="modal-overlay" @click="closeCreatePost">
-      <div class="modal-content" @click.stop>
+    <div v-if="showCreatePost" class="modal-overlay" @click.self="closeCreatePost">
+      <div class="modal-content">
         <div class="modal-header">
-          <h3>发布帖子</h3>
-          <button @click="closeCreatePost" class="close-btn">×</button>
+          <h3>发布新帖</h3>
+          <button class="close-btn" @click="closeCreatePost">×</button>
         </div>
         <div class="create-post-form">
-          <textarea 
-            v-model="newPost.content"
-            placeholder="分享你的盲盒收获..."
-            class="post-textarea"
-            rows="4"
-          ></textarea>
+          <div class="form-section">
+            <label>标题（可选）</label>
+            <input 
+              v-model="newPost.title" 
+              type="text" 
+              placeholder="给你的帖子起个标题..." 
+              class="post-input"
+            >
+          </div>
           
           <div class="form-section">
-            <label>选择关联盲盒（可选）</label>
+            <label>内容</label>
+            <textarea 
+              v-model="newPost.content" 
+              placeholder="分享你的盲盒收获或心得..." 
+              rows="4" 
+              class="post-textarea"
+            ></textarea>
+          </div>
+          
+          <div class="form-section">
+            <label>关联盲盒（可选）</label>
             <select v-model="newPost.blindBoxId" class="blindbox-select">
-              <option value="">不关联盲盒</option>
-              <option v-for="box in availableBlindBoxes" :key="box.id" :value="box.id">
-                {{ box.name }} - ¥{{ box.price }}
+              <option value="">选择相关盲盒</option>
+              <option 
+                v-for="blindBox in availableBlindBoxes" 
+                :key="blindBox.id" 
+                :value="blindBox.id"
+              >
+                {{ blindBox.name }} - ¥{{ blindBox.price }}
               </option>
             </select>
           </div>
-
+          
           <div class="form-actions">
-            <button @click="closeCreatePost" class="cancel-btn">取消</button>
-            <button @click="createPost" class="submit-btn" :disabled="!newPost.content.trim()">
-              发布
+            <button class="cancel-btn" @click="closeCreatePost">取消</button>
+            <button 
+              class="submit-btn" 
+              :disabled="!newPost.content.trim() || playerShowStore.creating"
+              @click="handleCreatePost"
+            >
+              {{ playerShowStore.creating ? '发布中...' : '发布' }}
             </button>
           </div>
         </div>
@@ -142,7 +200,7 @@
 
     <!-- 图片预览弹窗 -->
     <div v-if="previewImageUrl" class="image-preview-overlay" @click="closeImagePreview">
-      <img :src="previewImageUrl" alt="预览图片" class="preview-image" />
+      <img :src="previewImageUrl" alt="预览图片" class="preview-image">
     </div>
 
     <!-- 底部导航 -->
@@ -172,162 +230,130 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { userStore } from '../stores/userStore.js'
-import { blindBoxStore } from '../stores/blindBoxStore.js'
+import { usePlayerShowStore } from '@/stores/playerShowStore'
+import { useUserStore } from '@/stores/userStore'
+import { useBlindBoxStore } from '@/stores/blindBoxStore'
 
+// 路由和状态管理
 const router = useRouter()
+const playerShowStore = usePlayerShowStore()
+const userStore = useUserStore()
+const blindBoxStore = useBlindBoxStore()
 
 // 响应式数据
-const posts = ref([])
 const showCreatePost = ref(false)
-const newComment = reactive({})
 const previewImageUrl = ref('')
+const newComment = reactive({})
 
+// 新帖子数据
 const newPost = reactive({
+  title: '',
   content: '',
-  blindBoxId: ''
+  blindBoxId: '',
+  images: []
 })
 
-// 从blindBoxStore获取可用的盲盒列表
+// 计算属性
 const availableBlindBoxes = computed(() => {
-  return blindBoxStore.getProducts().map(product => ({
-    id: product._id || product.id,
+  const products = blindBoxStore.getProducts()
+  return products.map(product => ({
+    id: product._id || product.id, // 支持后端的_id和前端的id
     name: product.name,
     price: product.price,
     image: product.imageUrl
   }))
 })
 
-// 初始化示例帖子数据
-const initializePosts = () => {
-  // 获取实际的盲盒数据
-  const actualBlindBoxes = blindBoxStore.getProducts()
-  
-  posts.value = [
-    {
-      id: 1,
-      user: {
-        id: 1,
-        nickname: '盲盒收集家',
-        avatar: 'data:image/svg+xml,%3Csvg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"%3E%3Ccircle cx="20" cy="20" r="20" fill="%23667eea"/%3E%3Ctext x="20" y="24" font-family="Arial" font-size="12" fill="white" text-anchor="middle"%3E收%3C/text%3E%3C/svg%3E'
-      },
-      content: '今天抽到了超稀有的路飞！太开心了！这个海贼王盲盒真的太值了！',
-      createTime: '2小时前',
-      images: [],
-      blindBox: actualBlindBoxes[0] ? {
-        id: actualBlindBoxes[0]._id || actualBlindBoxes[0].id,
-        name: actualBlindBoxes[0].name,
-        price: actualBlindBoxes[0].price,
-        image: actualBlindBoxes[0].imageUrl
-      } : null,
-      likes: 15,
-      isLiked: false,
-      comments: [
-        {
-          id: 1,
-          user: {
-            nickname: '动漫迷',
-            avatar: 'data:image/svg+xml,%3Csvg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg"%3E%3Ccircle cx="15" cy="15" r="15" fill="%23ff6b6b"/%3E%3Ctext x="15" y="18" font-family="Arial" font-size="10" fill="white" text-anchor="middle"%3E动%3C/text%3E%3C/svg%3E'
-          },
-          content: '哇，好羡慕！我也想要路飞',
-          createTime: '1小时前'
-        }
-      ],
-      showComments: false
-    },
-    {
-      id: 2,
-      user: {
-        id: 2,
-        nickname: '迪士尼公主控',
-        avatar: 'data:image/svg+xml,%3Csvg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"%3E%3Ccircle cx="20" cy="20" r="20" fill="%23ff9ff3"/%3E%3Ctext x="20" y="24" font-family="Arial" font-size="12" fill="white" text-anchor="middle"%3E公%3C/text%3E%3C/svg%3E'
-      },
-      content: '艾莎公主太美了！这个迪士尼盲盒的质量真的很棒，推荐给大家！',
-      createTime: '5小时前',
-      images: [],
-      blindBox: actualBlindBoxes[1] ? {
-        id: actualBlindBoxes[1]._id || actualBlindBoxes[1].id,
-        name: actualBlindBoxes[1].name,
-        price: actualBlindBoxes[1].price,
-        image: actualBlindBoxes[1].imageUrl
-      } : null,
-      likes: 23,
-      isLiked: true,
-      comments: [
-        {
-          id: 2,
-          user: {
-            nickname: '童话梦想家',
-            avatar: 'data:image/svg+xml,%3Csvg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg"%3E%3Ccircle cx="15" cy="15" r="15" fill="%2354a0ff"/%3E%3Ctext x="15" y="18" font-family="Arial" font-size="10" fill="white" text-anchor="middle"%3E童%3C/text%3E%3C/svg%3E'
-          },
-          content: '我也抽到了艾莎！确实很漂亮',
-          createTime: '3小时前'
-        },
-        {
-          id: 3,
-          user: {
-            nickname: '盲盒新手',
-            avatar: 'data:image/svg+xml,%3Csvg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg"%3E%3Ccircle cx="15" cy="15" r="15" fill="%2326de81"/%3E%3Ctext x="15" y="18" font-family="Arial" font-size="10" fill="white" text-anchor="middle"%3E新%3C/text%3E%3C/svg%3E'
-          },
-          content: '请问这个盲盒在哪里可以买到？',
-          createTime: '2小时前'
-        }
-      ],
-      showComments: false
-    }
-  ]
-}
-
 // 方法
-const toggleLike = (postId) => {
-  const post = posts.value.find(p => p.id === postId)
-  if (post) {
-    post.isLiked = !post.isLiked
-    post.likes += post.isLiked ? 1 : -1
+const changeSortType = async (sortType) => {
+  if (sortType !== playerShowStore.sortType) {
+    await playerShowStore.fetchPosts(1, sortType, true)
   }
 }
 
-const showComments = (postId) => {
-  const post = posts.value.find(p => p.id === postId)
-  if (post) {
-    post.showComments = !post.showComments
+const handleToggleLike = async (postId) => {
+  try {
+    if (!userStore.isLoggedIn) {
+      alert('请先登录')
+      router.push('/login')
+      return
+    }
+    
+    await playerShowStore.toggleLike(postId)
+  } catch (error) {
+    console.error('点赞失败:', error)
+    alert(error.message || '点赞失败，请重试')
   }
 }
 
-const addComment = (postId) => {
+const handleAddComment = async (postId) => {
   const commentText = newComment[postId]
   if (!commentText || !commentText.trim()) return
 
-  const post = posts.value.find(p => p.id === postId)
-  if (post) {
-    const userInfo = userStore.getUserInfo()
-    const newCommentObj = {
-      id: Date.now(),
-      user: {
-        nickname: userInfo.nickname,
-        avatar: userInfo.avatar
-      },
-      content: commentText.trim(),
-      createTime: '刚刚'
+  try {
+    if (!userStore.isLoggedIn) {
+      alert('请先登录')
+      router.push('/login')
+      return
     }
-    post.comments.push(newCommentObj)
+
+    await playerShowStore.addComment(postId, commentText.trim())
     newComment[postId] = ''
+  } catch (error) {
+    console.error('添加评论失败:', error)
+    alert(error.message || '添加评论失败，请重试')
   }
 }
 
-const sharePost = (postId) => {
-  alert('分享功能待实现')
+const handleCreatePost = async () => {
+  if (!newPost.content.trim()) return
+
+  try {
+    if (!userStore.isLoggedIn) {
+      alert('请先登录')
+      router.push('/login')
+      return
+    }
+
+    // 构建符合后端期望的数据格式
+    const postData = {
+      title: newPost.title.trim() || '分享我的收获',
+      content: newPost.content.trim(),
+      images: newPost.images || []
+    }
+
+    // 如果选择了盲盒，添加关联信息
+    if (newPost.blindBoxId) {
+      const selectedBlindBox = availableBlindBoxes.value.find(box => box.id === newPost.blindBoxId)
+      if (selectedBlindBox) {
+        postData.relatedBlindBox = {
+          blindBoxId: newPost.blindBoxId,
+          blindBoxName: selectedBlindBox.name
+        }
+      }
+    }
+
+    await playerShowStore.createPost(postData)
+    closeCreatePost()
+    alert('发布成功！')
+  } catch (error) {
+    console.error('发布帖子失败:', error)
+    alert(error.message || '发布失败，请重试')
+  }
 }
 
-// 跳转到盲盒详情页
+const loadMore = async () => {
+  if (playerShowStore.hasMore && !playerShowStore.loading) {
+    const nextPage = playerShowStore.pagination.current + 1
+    await playerShowStore.fetchPosts(nextPage, playerShowStore.sortType, false)
+  }
+}
+
 const goToBlindBox = (blindBoxId) => {
-  console.log('PlayerShow - goToBlindBox called with ID:', blindBoxId)
   if (blindBoxId) {
     router.push(`/blindbox/${blindBoxId}`)
-  } else {
-    console.error('PlayerShow - Invalid blindBoxId:', blindBoxId)
   }
 }
 
@@ -341,47 +367,49 @@ const closeImagePreview = () => {
 
 const closeCreatePost = () => {
   showCreatePost.value = false
+  newPost.title = ''
   newPost.content = ''
   newPost.blindBoxId = ''
-}
-
-const createPost = () => {
-  if (!newPost.content.trim()) return
-
-  const userInfo = userStore.getUserInfo()
-  const selectedBlindBox = availableBlindBoxes.value.find(box => box.id == newPost.blindBoxId)
-  
-  const post = {
-    id: Date.now(),
-    user: {
-      id: userInfo.id,
-      nickname: userInfo.nickname,
-      avatar: userInfo.avatar
-    },
-    content: newPost.content.trim(),
-    createTime: '刚刚',
-    images: [],
-    blindBox: selectedBlindBox || null,
-    likes: 0,
-    isLiked: false,
-    comments: [],
-    showComments: false
-  }
-
-  posts.value.unshift(post)
-  closeCreatePost()
-  alert('发布成功！')
+  newPost.images = []
 }
 
 // 生命周期
-onMounted(() => {
-  // 确保blindBoxStore数据已初始化
-  blindBoxStore.initializeData()
-  console.log('PlayerShow - blindBoxStore products:', blindBoxStore.getProducts())
+onMounted(async () => {
+  // 确保用户信息已加载
+  if (!userStore.userInfo && userStore.isLoggedIn) {
+    await userStore.fetchUserInfo()
+  }
   
-  // 初始化帖子数据
-  initializePosts()
-  console.log('PlayerShow - initialized posts:', posts.value)
+  // 从后端API获取最新的盲盒数据
+  try {
+    const token = localStorage.getItem('token')
+    if (token) {
+      const response = await fetch('/api/v1/blind-boxes', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          blindBoxStore.setProducts(data.data.blindBoxes || [])
+        }
+      }
+    }
+  } catch (error) {
+    console.error('获取盲盒数据失败:', error)
+  }
+  
+  // 确保盲盒数据已初始化（使用默认数据作为备用）
+  blindBoxStore.initializeData()
+  
+  // 获取帖子列表
+  await playerShowStore.fetchPosts(1, 'latest', true)
+})
+
+onUnmounted(() => {
+  // 清理状态
+  playerShowStore.resetState()
 })
 </script>
 
@@ -425,8 +453,56 @@ onMounted(() => {
   background: #5a6fd8;
 }
 
+/* 排序选择 */
+.sort-tabs {
+  display: flex;
+  background: white;
+  padding: 10px 20px;
+  border-bottom: 1px solid #e9ecef;
+  gap: 10px;
+}
+
+.sort-tab {
+  background: none;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #666;
+  transition: all 0.3s;
+}
+
+.sort-tab.active {
+  background: #667eea;
+  color: white;
+}
+
+.sort-tab:hover:not(.active) {
+  background: #f8f9fa;
+  color: #333;
+}
+
 .posts-list {
   padding: 20px;
+}
+
+/* 加载状态 */
+.loading-state, .loading-more {
+  text-align: center;
+  padding: 40px 20px;
+  color: #999;
+}
+
+.loading-spinner {
+  font-size: 24px;
+  margin-bottom: 10px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .empty-state {
@@ -484,6 +560,13 @@ onMounted(() => {
 
 .post-content {
   margin-bottom: 15px;
+}
+
+.post-title {
+  margin: 0 0 10px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
 }
 
 .post-text {
@@ -546,6 +629,13 @@ onMounted(() => {
   font-size: 16px;
   font-weight: bold;
   color: #667eea;
+}
+
+.drawn-item {
+  margin: 4px 0 0 0;
+  font-size: 12px;
+  color: #28a745;
+  font-weight: 500;
 }
 
 .link-arrow {
@@ -663,6 +753,27 @@ onMounted(() => {
   font-size: 14px;
 }
 
+/* 加载更多 */
+.load-more {
+  text-align: center;
+  padding: 20px;
+}
+
+.load-more-btn {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.3s;
+}
+
+.load-more-btn:hover {
+  background: #5a6fd8;
+}
+
 /* 弹窗样式 */
 .modal-overlay {
   position: fixed;
@@ -710,6 +821,21 @@ onMounted(() => {
 
 .create-post-form {
   padding: 20px;
+}
+
+.post-input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  margin-bottom: 15px;
+  box-sizing: border-box;
+}
+
+.post-input:focus {
+  border-color: #667eea;
 }
 
 .post-textarea {

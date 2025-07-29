@@ -255,6 +255,45 @@ router.put('/:id/cancel', auth, async (req, res) => {
   }
 });
 
+// 删除订单
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    const order = await Order.findOne({
+      _id: req.params.id,
+      userId: req.user._id
+    });
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: '订单不存在'
+      });
+    }
+
+    // 只允许删除已取消或已完成的订单
+    if (order.status !== 'cancelled' && order.status !== 'completed') {
+      return res.status(400).json({
+        success: false,
+        message: '只能删除已取消或已完成的订单'
+      });
+    }
+
+    // 删除订单
+    await Order.findByIdAndDelete(req.params.id);
+
+    res.json({
+      success: true,
+      message: '订单删除成功'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: '删除订单失败',
+      error: error.message
+    });
+  }
+});
+
 // 获取订单统计
 router.get('/stats/summary', auth, async (req, res) => {
   try {

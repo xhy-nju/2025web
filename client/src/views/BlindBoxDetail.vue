@@ -82,12 +82,13 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { blindBoxStore } from '../stores/blindBoxStore.js'
-import { userStore } from '../stores/userStore.js'
+import { useBlindBoxStore } from '../stores/blindBoxStore.js'
+import { useUserStore } from '../stores/userStore.js'
 import axios from 'axios'
 
 const route = useRoute()
 const router = useRouter()
+const blindBoxStore = useBlindBoxStore()
 
 // 使用共享数据存储
 const product = computed(() => {

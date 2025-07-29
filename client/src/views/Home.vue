@@ -144,9 +144,10 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
-import { blindBoxStore } from '@/stores/blindBoxStore.js'
+import { useBlindBoxStore } from '@/stores/blindBoxStore.js'
 
 const router = useRouter();
+const blindBoxStore = useBlindBoxStore();
 const activeTab = ref("home");
 const currentCategory = ref("热门");
 const searchKeyword = ref("");

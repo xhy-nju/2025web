@@ -20,10 +20,33 @@ router.get('/', async (req, res) => {
           .skip(skip)
           .limit(limit)
           .populate('userId', 'username avatar')
-          .populate('relatedBlindBox.blindBoxId', 'name imageUrl');
+          .populate('relatedBlindBox.blindBoxId', 'name imageUrl price');
       }
     } else {
       posts = await PlayerShow.getLatestPosts(limit, skip);
+    }
+
+    // 如果用户已登录，添加点赞状态
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    let currentUserId = null;
+    
+    if (token) {
+      try {
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+        currentUserId = decoded.userId;
+      } catch (error) {
+        // Token无效，忽略错误，继续返回数据
+      }
+    }
+
+    // 为每个帖子添加当前用户的点赞状态
+    if (currentUserId) {
+      posts = posts.map(post => {
+        const postObj = post.toObject();
+        postObj.isLiked = post.likes.some(like => like.userId.toString() === currentUserId.toString());
+        return postObj;
+      });
     }
 
     const total = await PlayerShow.countDocuments({ isHidden: false });
@@ -54,7 +77,7 @@ router.get('/:id', async (req, res) => {
   try {
     const post = await PlayerShow.findById(req.params.id)
       .populate('userId', 'username avatar')
-      .populate('relatedBlindBox.blindBoxId', 'name imageUrl')
+      .populate('relatedBlindBox.blindBoxId', 'name imageUrl price')
       .populate('comments.userId', 'username avatar');
 
     if (!post || post.isHidden) {

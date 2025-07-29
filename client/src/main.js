@@ -1,4 +1,5 @@
 import { createApp } from 'vue'
+import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 import axios from 'axios'
@@ -38,9 +39,11 @@ axios.interceptors.response.use(
 )
 
 const app = createApp(App)
+const pinia = createPinia()
 
 // 全局配置axios
 app.config.globalProperties.$http = axios
 
+app.use(pinia)
 app.use(router)
 app.mount('#app')

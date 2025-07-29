@@ -183,7 +183,7 @@ playerShowSchema.statics.getHotPosts = function(limit = 10) {
     .sort({ isPinned: -1, likesCount: -1, createdAt: -1 })
     .limit(limit)
     .populate('userId', 'username avatar')
-    .populate('relatedBlindBox.blindBoxId', 'name imageUrl');
+    .populate('relatedBlindBox.blindBoxId', 'name imageUrl price');
 };
 
 // 静态方法：获取最新帖子
@@ -193,7 +193,7 @@ playerShowSchema.statics.getLatestPosts = function(limit = 10, skip = 0) {
     .skip(skip)
     .limit(limit)
     .populate('userId', 'username avatar')
-    .populate('relatedBlindBox.blindBoxId', 'name imageUrl');
+    .populate('relatedBlindBox.blindBoxId', 'name imageUrl price');
 };
 
 // 静态方法：根据用户获取帖子
@@ -202,7 +202,7 @@ playerShowSchema.statics.getPostsByUser = function(userId, limit = 10, skip = 0)
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit)
-    .populate('relatedBlindBox.blindBoxId', 'name imageUrl');
+    .populate('relatedBlindBox.blindBoxId', 'name imageUrl price');
 };
 
 // 静态方法：搜索帖子
@@ -218,7 +218,7 @@ playerShowSchema.statics.searchPosts = function(keyword, limit = 10, skip = 0) {
     .skip(skip)
     .limit(limit)
     .populate('userId', 'username avatar')
-    .populate('relatedBlindBox.blindBoxId', 'name imageUrl');
+    .populate('relatedBlindBox.blindBoxId', 'name imageUrl price');
 };
 
 module.exports = mongoose.model('PlayerShow', playerShowSchema);

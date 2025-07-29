@@ -199,7 +199,7 @@
          <div class="nav-text">玩家秀</div>
        </div>
       <div class="nav-item" @click="$router.push('/admin-auth')">
-        <div class="nav-icon">⚙️</div>
+        <div class="nav-icon">📦</div>
         <div class="nav-text">管理</div>
       </div>
       <div class="nav-item" @click="$router.push('/message')">

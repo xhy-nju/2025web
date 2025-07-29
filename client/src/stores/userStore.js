@@ -90,6 +90,28 @@ export const userStore = {
     return stats
   },
 
+  // 退出登录
+  logout() {
+    // 清除本地存储的token
+    localStorage.removeItem('token')
+    localStorage.removeItem('adminToken')
+    
+    // 重置用户信息为默认值
+    Object.assign(userInfo, {
+      id: null,
+      nickname: '',
+      avatar: '',
+      phone: '',
+      email: '',
+      coupons: 0,
+      coins: 0,
+      points: 0
+    })
+    
+    // 清空订单数据
+    orders.value = []
+  },
+
   // 订单状态常量
   ORDER_STATUS
 }

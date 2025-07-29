@@ -10,6 +10,10 @@
         <h2>{{ userInfo.nickname }}</h2>
         <p>{{ userInfo.phone }}</p>
       </div>
+      <div class="logout-btn" @click="handleLogout">
+        <div class="logout-icon">🚪</div>
+        <div class="logout-text">退出</div>
+      </div>
     </div>
 
     <!-- 个人中心栏 -->
@@ -240,6 +244,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+import { userStore } from '../stores/userStore.js'
 
 const router = useRouter()
 
@@ -471,6 +476,22 @@ const handlePlayerShowClick = () => {
   alert('玩家秀功能即将上线，敬请期待！')
 }
 
+// 退出登录
+const handleLogout = () => {
+  if (confirm('确定要退出登录吗？')) {
+    // 使用userStore的logout方法
+    userStore.logout()
+    
+    // 跳转到登录页
+    router.push('/login')
+    
+    // 显示退出成功提示
+    setTimeout(() => {
+      alert('已成功退出登录')
+    }, 100)
+  }
+}
+
 // 生命周期
 onMounted(async () => {
   loading.value = true
@@ -540,6 +561,33 @@ onMounted(async () => {
   margin: 0;
   opacity: 0.8;
   font-size: 14px;
+}
+
+.logout-btn {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 10px;
+  transition: all 0.3s;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.logout-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+.logout-icon {
+  font-size: 20px;
+  margin-bottom: 4px;
+}
+
+.logout-text {
+  font-size: 12px;
+  opacity: 0.9;
 }
 
 .stats-section {

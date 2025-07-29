@@ -246,22 +246,32 @@ router.post('/', adminAuth, async (req, res) => {
 // 更新盲盒（管理员）
 router.put('/:id', adminAuth, async (req, res) => {
   try {
+    console.log('更新盲盒请求 - ID:', req.params.id);
+    console.log('更新盲盒请求 - 数据:', JSON.stringify(req.body, null, 2));
+    
     const blindBox = await BlindBox.findById(req.params.id);
     
     if (!blindBox) {
+      console.log('盲盒不存在:', req.params.id);
       return res.status(404).json({
         success: false,
         message: '盲盒不存在'
       });
     }
 
+    console.log('原始盲盒数据:', JSON.stringify(blindBox.toObject(), null, 2));
+
     Object.assign(blindBox, req.body);
+    
+    console.log('合并后的盲盒数据:', JSON.stringify(blindBox.toObject(), null, 2));
     
     // 验证概率总和
     if (!blindBox.validateProbabilities()) {
+      const totalProbability = blindBox.items.reduce((sum, item) => sum + item.probability, 0);
+      console.log('概率验证失败 - 总概率:', totalProbability);
       return res.status(400).json({
         success: false,
-        message: '物品概率总和必须为100%'
+        message: `物品概率总和必须为100%，当前为${totalProbability}%`
       });
     }
 
@@ -273,10 +283,16 @@ router.put('/:id', adminAuth, async (req, res) => {
       message: '盲盒更新成功'
     });
   } catch (error) {
+    console.error('更新盲盒失败:', error);
+    console.error('错误详情:', error.message);
+    if (error.name === 'ValidationError') {
+      console.error('验证错误详情:', error.errors);
+    }
     res.status(400).json({
       success: false,
       message: '更新盲盒失败',
-      error: error.message
+      error: error.message,
+      details: error.name === 'ValidationError' ? error.errors : undefined
     });
   }
 });

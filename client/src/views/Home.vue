@@ -38,9 +38,9 @@
               <!-- 模拟盲盒数据 -->
               <div 
                 v-for="item in filteredProducts" 
-                :key="item.id"
+                :key="item._id || item.id"
                 class="product-item"
-                @click="goToDetail(item.id)"
+                @click="goToDetail(item._id || item.id)"
               >
                 <div class="product-image">
                   <img :src="item.imageUrl" :alt="item.name" />
@@ -286,8 +286,67 @@ const handleCategoryChange = async (category) => {
   }
 };
 
-const goToDetail = (id) => {
-  router.push(`/blindbox/${id}`);
+const goToDetail = (id, event) => {
+  // 阻止默认行为和事件冒泡
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  
+  console.log('=== 点击盲盒详情 ===');
+  console.log('盲盒ID:', id);
+  console.log('filteredProducts数据:', filteredProducts.value);
+  console.log('filteredProducts第一个产品:', filteredProducts.value[0]);
+  console.log('filteredProducts第一个产品的id:', filteredProducts.value[0]?.id);
+  console.log('allProducts数据:', allProducts.value);
+  console.log('allProducts第一个产品:', allProducts.value[0]);
+  console.log('allProducts第一个产品的id:', allProducts.value[0]?.id);
+  console.log('store中的原始数据:', blindBoxStore.getProducts());
+  console.log('store第一个产品:', blindBoxStore.getProducts()[0]);
+  console.log('store第一个产品的id:', blindBoxStore.getProducts()[0]?.id);
+  console.log('当前路由:', router.currentRoute.value.path);
+  console.log('目标路由:', `/blindbox/${id}`);
+  console.log('router对象:', router);
+  
+  // 如果ID是undefined，尝试从事件中获取
+  if (id === undefined && event && event.target) {
+    console.log('ID为undefined，尝试从DOM中获取...');
+    const productItem = event.target.closest('.product-item');
+    if (productItem) {
+      const productIndex = Array.from(productItem.parentNode.children).indexOf(productItem);
+      console.log('产品索引:', productIndex);
+      if (filteredProducts.value[productIndex]) {
+        id = filteredProducts.value[productIndex].id;
+        console.log('从DOM获取的ID:', id);
+      }
+    }
+  }
+  
+  if (id === undefined) {
+    console.error('无法获取有效的产品ID');
+    return;
+  }
+  
+  try {
+    // 使用 router.push 进行导航
+    const targetRoute = `/blindbox/${id}`;
+    console.log('开始路由跳转...');
+    
+    router.push(targetRoute).then(() => {
+      console.log('路由跳转成功完成');
+    }).catch((error) => {
+      console.error('路由跳转Promise失败:', error);
+      // 如果push失败，尝试使用replace
+      console.log('尝试使用router.replace...');
+      router.replace(targetRoute);
+    });
+    
+  } catch (error) {
+    console.error('路由跳转异常:', error);
+    // 备选方案：使用window.location
+    console.log('使用window.location作为备选方案');
+    window.location.href = `#/blindbox/${id}`;
+  }
 };
 
 // 监听滚动事件，控制回到顶部按钮的显示
@@ -332,8 +391,38 @@ onMounted(async () => {
     return;
   }
 
-  // 初始化产品数据
-  products.value = [...allProducts.value];
+  try {
+    // 从后端API获取产品数据
+    const response = await fetch('/api/v1/blind-boxes', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    if (response.ok) {
+      const data = await response.json();
+      if (data.success) {
+        // 更新store中的数据
+        blindBoxStore.setProducts(data.data.blindBoxes || []);
+        // allProducts是计算属性，会自动更新，不需要手动赋值
+        products.value = [...allProducts.value];
+      } else {
+        console.error('获取产品数据失败:', data.message);
+        // 使用store中的默认数据
+        // allProducts是计算属性，会自动更新，不需要手动赋值
+        products.value = [...allProducts.value];
+      }
+    } else {
+      console.error('API调用失败:', response.status);
+      // 使用store中的默认数据
+      // allProducts是计算属性，会自动更新，不需要手动赋值
+      products.value = [...allProducts.value];
+    }
+  } catch (error) {
+    console.error('获取产品数据出错:', error);
+    // 如果API调用失败，使用store中的默认数据
+    // allProducts是计算属性，会自动更新，不需要手动赋值
+    products.value = [...allProducts.value];
+  }
 
   // 添加滚动监听
   if (contentArea.value) {

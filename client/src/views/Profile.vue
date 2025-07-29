@@ -239,7 +239,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { userStore } from '../stores/userStore.js'
+import axios from 'axios'
 
 const router = useRouter()
 
@@ -247,6 +247,17 @@ const router = useRouter()
 const showEditProfile = ref(false)
 const showOrderDetail = ref(false)
 const selectedOrder = ref(null)
+const userInfo = ref({
+  nickname: '',
+  phone: '',
+  email: '',
+  avatar: '',
+  coupons: 0,
+  coins: 0,
+  points: 0
+})
+const orders = ref([])
+const loading = ref(false)
 
 // 编辑表单数据
 const editForm = ref({
@@ -257,9 +268,88 @@ const editForm = ref({
 })
 
 // 计算属性
-const userInfo = computed(() => userStore.getUserInfo())
-const orderStats = computed(() => userStore.getOrderStats())
-const recentOrders = computed(() => userStore.getOrders().slice(0, 3))
+const orderStats = computed(() => {
+  const stats = {
+    total: orders.value.length,
+    pending_payment: 0,
+    pending_shipment: 0,
+    pending_receipt: 0,
+    completed: 0
+  }
+  
+  orders.value.forEach(order => {
+    if (stats[order.status] !== undefined) {
+      stats[order.status]++
+    }
+  })
+  
+  return stats
+})
+
+const recentOrders = computed(() => orders.value.slice(0, 3))
+
+// 从后端获取用户信息
+const fetchUserInfo = async () => {
+  try {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      router.push('/login')
+      return
+    }
+
+    const response = await axios.get('/api/v1/users/profile', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+
+    if (response.data.success) {
+       const userData = response.data.data.user
+       userInfo.value = {
+         nickname: userData.nickname || userData.username,
+         phone: userData.phone || '',
+         email: userData.email || '',
+         avatar: userData.avatar || '',
+         coupons: userData.coupons || 0,
+         coins: userData.coins || 0,
+         points: userData.points || 0
+       }
+       // 同时更新编辑表单
+       editForm.value = {
+         nickname: userData.nickname || userData.username,
+         phone: userData.phone || '',
+         email: userData.email || '',
+         avatar: userData.avatar || ''
+       }
+     } else {
+      console.error('获取用户信息失败:', response.data.message)
+    }
+  } catch (error) {
+    console.error('获取用户信息出错:', error)
+  }
+}
+
+// 从后端获取订单数据
+const fetchOrders = async () => {
+  try {
+    const token = localStorage.getItem('token')
+    if (!token) return
+
+    const response = await axios.get('/api/v1/orders', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+
+    if (response.data.success) {
+      orders.value = response.data.data.orders || []
+    } else {
+      console.error('获取订单失败:', response.data.message)
+    }
+  } catch (error) {
+    console.error('获取订单出错:', error)
+  }
+}
 
 // 方法
 const viewAllOrders = () => {
@@ -270,9 +360,24 @@ const viewOrdersByStatus = (status) => {
   router.push(`/orders?status=${status}`)
 }
 
-const viewOrderDetail = (orderId) => {
-  selectedOrder.value = userStore.getOrderById(orderId)
-  showOrderDetail.value = true
+const viewOrderDetail = async (orderId) => {
+  try {
+    const token = localStorage.getItem('token')
+    const response = await axios.get(`/api/v1/orders/${orderId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+
+    if (response.data.success) {
+      selectedOrder.value = response.data.data
+      showOrderDetail.value = true
+    } else {
+      console.error('获取订单详情失败:', response.data.message)
+    }
+  } catch (error) {
+    console.error('获取订单详情出错:', error)
+  }
 }
 
 const closeOrderDetail = () => {
@@ -280,10 +385,26 @@ const closeOrderDetail = () => {
   selectedOrder.value = null
 }
 
-const confirmReceipt = (orderId) => {
-  if (userStore.confirmReceipt(orderId)) {
-    alert('确认收货成功！')
-    closeOrderDetail()
+const confirmReceipt = async (orderId) => {
+  try {
+    const token = localStorage.getItem('token')
+    const response = await axios.put(`/api/v1/orders/${orderId}/confirm`, {}, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+
+    if (response.data.success) {
+      alert('确认收货成功！')
+      closeOrderDetail()
+      // 重新获取订单数据
+      await fetchOrders()
+    } else {
+      alert('确认收货失败: ' + response.data.message)
+    }
+  } catch (error) {
+    console.error('确认收货出错:', error)
+    alert('确认收货失败，请稍后重试')
   }
 }
 
@@ -312,10 +433,27 @@ const handleAvatarUpload = (event) => {
   }
 }
 
-const saveProfile = () => {
-  userStore.updateUserInfo(editForm.value)
-  alert('个人资料更新成功！')
-  closeEditProfile()
+const saveProfile = async () => {
+  try {
+    const token = localStorage.getItem('token')
+    const response = await axios.put('/api/v1/users/profile', editForm.value, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+
+    if (response.data.success) {
+      alert('个人资料更新成功！')
+      closeEditProfile()
+      // 重新获取用户信息
+      await fetchUserInfo()
+    } else {
+      alert('更新失败: ' + response.data.message)
+    }
+  } catch (error) {
+    console.error('更新个人资料出错:', error)
+    alert('更新失败，请稍后重试')
+  }
 }
 
 const handlePlayerShowClick = () => {
@@ -323,14 +461,15 @@ const handlePlayerShowClick = () => {
 }
 
 // 生命周期
-onMounted(() => {
-  // 初始化编辑表单
-  const user = userStore.getUserInfo()
-  editForm.value = {
-    nickname: user.nickname,
-    phone: user.phone,
-    email: user.email,
-    avatar: user.avatar
+onMounted(async () => {
+  loading.value = true
+  try {
+    await Promise.all([
+      fetchUserInfo(),
+      fetchOrders()
+    ])
+  } finally {
+    loading.value = false
   }
 })
 </script>

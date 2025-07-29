@@ -4,7 +4,7 @@ import router from './router'
 import axios from 'axios'
 
 // 配置axios默认设置
-axios.defaults.baseURL = 'http://localhost:3000'
+axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
 axios.defaults.timeout = 10000
 
 // 请求拦截器 - 添加token

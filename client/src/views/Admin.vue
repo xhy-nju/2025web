@@ -244,7 +244,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { blindBoxStore } from '../stores/blindBoxStore.js'
+import axios from 'axios'
 
 const router = useRouter()
 
@@ -254,6 +254,8 @@ const showAddModal = ref(false)
 const showEditModal = ref(false)
 const selectedProducts = ref([])
 const editingProduct = ref(null)
+const products = ref([])
+const loading = ref(false)
 
 // 表单数据
 const formData = ref({
@@ -268,10 +270,6 @@ const formData = ref({
   ]
 })
 
-// 使用共享数据存储
-const products = computed(() => blindBoxStore.getReactiveProducts())
-
-
 // 计算属性
 const totalProducts = computed(() => products.value.length)
 const totalSold = computed(() => products.value.reduce((sum, p) => sum + p.soldCount, 0))
@@ -283,6 +281,29 @@ const averagePrice = computed(() => {
   const avg = products.value.reduce((sum, p) => sum + parseFloat(p.price), 0) / products.value.length
   return `¥${avg.toFixed(2)}`
 })
+
+// 获取盲盒数据
+const fetchBlindBoxes = async () => {
+  try {
+    loading.value = true
+    const token = localStorage.getItem('adminToken')
+    const response = await axios.get('/api/v1/blind-boxes/admin/all', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+    
+    if (response.data.success) {
+      products.value = response.data.data.blindBoxes
+    } else {
+      console.error('获取盲盒数据失败:', response.data.message)
+    }
+  } catch (error) {
+    console.error('获取盲盒数据失败:', error)
+  } finally {
+    loading.value = false
+  }
+}
 
 // 方法
 const logout = () => {
@@ -299,13 +320,26 @@ const toggleProductSelection = (id) => {
   }
 }
 
-const confirmDelete = () => {
+const confirmDelete = async () => {
   if (confirm(`确定要删除选中的 ${selectedProducts.value.length} 个盲盒吗？`)) {
-    selectedProducts.value.forEach(id => {
-      blindBoxStore.deleteProduct(id)
-    })
-    selectedProducts.value = []
-    alert('删除成功！')
+    try {
+      const token = localStorage.getItem('adminToken')
+      
+      for (const id of selectedProducts.value) {
+        await axios.delete(`/api/v1/blind-boxes/${id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+      }
+      
+      selectedProducts.value = []
+      alert('删除成功！')
+      await fetchBlindBoxes() // 重新获取数据
+    } catch (error) {
+      console.error('删除失败:', error)
+      alert('删除失败，请重试')
+    }
   }
 }
 
@@ -333,13 +367,13 @@ const closeModal = () => {
 const resetForm = () => {
   formData.value = {
     name: '',
-    category: '',
+    category: '动漫',
     price: '',
     soldCount: 0,
     description: '',
     imageUrl: '',
     items: [
-      { name: '', rarity: '', probability: 0, imageUrl: '' }
+      { name: '', rarity: 'N', probability: 0, imageUrl: '' }
     ]
   }
 }
@@ -368,24 +402,39 @@ const handleFormItemImageUpload = (event, index) => {
 }
 
 // 处理产品列表中内容物图片上传
-const handleItemImageUpload = (event, productIndex, itemIndex) => {
+const handleItemImageUpload = async (event, productIndex, itemIndex) => {
   const file = event.target.files[0]
   if (file) {
     const reader = new FileReader()
-    reader.onload = (e) => {
-      const imageUrl = e.target.result
-      const product = products.value[productIndex]
-      const item = product.items[itemIndex]
-      
-      // 使用共享数据存储更新图片
-      blindBoxStore.updateItemImage(product.id, item.id, imageUrl)
+    reader.onload = async (e) => {
+      try {
+        const imageUrl = e.target.result
+        const product = products.value[productIndex]
+        const token = localStorage.getItem('adminToken')
+        
+        // 更新产品数据
+        const updatedProduct = { ...product }
+        updatedProduct.items[itemIndex].imageUrl = imageUrl
+        
+        await axios.put(`/api/v1/blind-boxes/${product._id}`, updatedProduct, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+        
+        // 更新本地数据
+        products.value[productIndex].items[itemIndex].imageUrl = imageUrl
+      } catch (error) {
+        console.error('更新图片失败:', error)
+        alert('更新图片失败，请重试')
+      }
     }
     reader.readAsDataURL(file)
   }
 }
 
 const addItem = () => {
-  formData.value.items.push({ name: '', rarity: '', probability: 0, imageUrl: '' })
+  formData.value.items.push({ name: '', rarity: 'N', probability: 0, imageUrl: '' })
 }
 
 const removeItem = (index) => {
@@ -394,44 +443,118 @@ const removeItem = (index) => {
   }
 }
 
-const saveProduct = () => {
+const saveProduct = async () => {
+  // 验证表单数据
+  if (!formData.value.name.trim()) {
+    alert('请输入盲盒名称')
+    return
+  }
+  
+  if (!formData.value.category) {
+    alert('请选择分类')
+    return
+  }
+  
+  if (!formData.value.price || parseFloat(formData.value.price) <= 0) {
+    alert('请输入有效的价格')
+    return
+  }
+  
+  if (!formData.value.description.trim()) {
+    alert('请输入描述')
+    return
+  }
+  
+  // 验证内容物
+  for (let i = 0; i < formData.value.items.length; i++) {
+    const item = formData.value.items[i]
+    if (!item.name.trim()) {
+      alert(`请输入第${i + 1}个内容物的名称`)
+      return
+    }
+    if (!item.rarity) {
+      alert(`请选择第${i + 1}个内容物的稀有度`)
+      return
+    }
+    if (!item.probability || item.probability <= 0) {
+      alert(`请输入第${i + 1}个内容物的有效概率`)
+      return
+    }
+  }
+  
   // 验证概率总和
-  const totalProbability = formData.value.items.reduce((sum, item) => sum + item.probability, 0)
-  if (totalProbability !== 100) {
-    alert('所有内容物的概率总和必须等于100%')
+  const totalProbability = formData.value.items.reduce((sum, item) => sum + parseFloat(item.probability), 0)
+  if (Math.abs(totalProbability - 100) > 0.01) {
+    alert(`所有内容物的概率总和必须等于100%，当前为${totalProbability}%`)
     return
   }
 
-  if (showEditModal.value) {
-    // 更新产品
-    const updatedProduct = {
-      ...editingProduct.value,
-      ...formData.value,
-      items: formData.value.items.map((item, idx) => ({ ...item, id: idx + 1 }))
+  try {
+    const token = localStorage.getItem('adminToken')
+    
+    // 格式化数据
+    const submitData = {
+      name: formData.value.name.trim(),
+      category: formData.value.category,
+      price: parseFloat(formData.value.price),
+      description: formData.value.description.trim(),
+      imageUrl: formData.value.imageUrl || '',
+      items: formData.value.items.map(item => ({
+        name: item.name.trim(),
+        rarity: item.rarity,
+        probability: parseFloat(item.probability),
+        imageUrl: item.imageUrl || ''
+      }))
     }
-    blindBoxStore.updateProduct(editingProduct.value.id, updatedProduct)
-    alert('更新成功！')
-  } else {
-    // 添加新产品
-    const newProduct = {
-      ...formData.value,
-      isNew: true,
-      items: formData.value.items.map((item, idx) => ({ ...item, id: idx + 1 }))
+    
+    // 如果是编辑模式，保留soldCount
+    if (showEditModal.value) {
+      submitData.soldCount = formData.value.soldCount || 0
     }
-    blindBoxStore.addProduct(newProduct)
-    alert('添加成功！')
+    
+    console.log('提交的数据:', submitData) // 调试用
+    
+    if (showEditModal.value) {
+      // 更新产品
+      await axios.put(`/api/v1/blind-boxes/${editingProduct.value._id}`, submitData, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      alert('更新成功！')
+    } else {
+      // 添加新产品
+      await axios.post('/api/v1/blind-boxes', submitData, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      alert('添加成功！')
+    }
+    
+    closeModal()
+    await fetchBlindBoxes() // 重新获取数据
+  } catch (error) {
+    console.error('保存失败:', error)
+    if (error.response && error.response.data) {
+      alert(`保存失败: ${error.response.data.message || '未知错误'}`)
+    } else {
+      alert('保存失败，请重试')
+    }
   }
-  
-  closeModal()
 }
 
 // 生命周期
-onMounted(() => {
+onMounted(async () => {
   // 检查管理员权限
   const adminToken = localStorage.getItem('adminToken')
   if (!adminToken) {
     router.push('/admin-auth')
+    return
   }
+  
+  // 获取盲盒数据
+  await fetchBlindBoxes()
 })
 </script>
 

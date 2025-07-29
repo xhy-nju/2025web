@@ -87,7 +87,16 @@ export const blindBoxStore = {
 
   // 根据ID获取产品
   getProductById(id) {
-    return blindBoxData.products.find(product => product.id === parseInt(id))
+    return blindBoxData.products.find(product => {
+      // 支持 _id 和 id 两种字段
+      const productId = product._id || product.id;
+      const searchId = id;
+      
+      // 尝试字符串比较和数字比较
+      return productId === searchId || 
+             productId === parseInt(searchId) || 
+             productId === searchId.toString();
+    });
   },
 
   // 更新产品
@@ -131,9 +140,21 @@ export const blindBoxStore = {
     return false
   },
 
+  // 设置产品数据（用于从API更新数据）
+  setProducts(products) {
+    blindBoxData.products = products
+  },
+
   // 获取响应式数据（用于组件中的响应式更新）
   getReactiveProducts() {
     return blindBoxData.products
+  },
+
+  // 初始化数据（确保数据已加载）
+  initializeData() {
+    // 由于数据是静态的，这里只需要确保数据存在
+    console.log('BlindBoxStore 数据已初始化，产品数量:', blindBoxData.products.length)
+    return Promise.resolve(blindBoxData.products)
   }
 }
 

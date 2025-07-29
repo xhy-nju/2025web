@@ -10,8 +10,8 @@ const itemSchema = new mongoose.Schema({
   rarity: {
     type: String,
     required: [true, '稀有度是必需的'],
-    enum: ['普通', '稀有', '史诗', '传说'],
-    default: '普通'
+    enum: ['N', 'R', 'SR', 'SSR', '普通', '稀有', '史诗', '传说'],
+    default: 'N'
   },
   probability: {
     type: Number,
@@ -53,7 +53,7 @@ const blindBoxSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
-  isNew: {
+  isNewProduct: {
     type: Boolean,
     default: false
   },
@@ -74,7 +74,7 @@ const blindBoxSchema = new mongoose.Schema({
 
 // 添加索引
 blindBoxSchema.index({ category: 1 });
-blindBoxSchema.index({ isNew: 1 });
+blindBoxSchema.index({ isNewProduct: 1 });
 blindBoxSchema.index({ isActive: 1 });
 blindBoxSchema.index({ name: 'text', description: 'text' });
 

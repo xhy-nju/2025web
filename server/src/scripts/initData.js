@@ -28,37 +28,37 @@ const blindBoxData = [
     items: [
       {
         name: "路飞",
-        rarity: "普通",
+        rarity: "N",
         probability: 30,
         imageUrl: "/images/luffy.jpg"
       },
       {
         name: "索隆",
-        rarity: "普通", 
+        rarity: "N", 
         probability: 25,
         imageUrl: "/images/zoro.jpg"
       },
       {
         name: "娜美",
-        rarity: "稀有",
+        rarity: "R",
         probability: 20,
         imageUrl: "/images/nami.jpg"
       },
       {
         name: "山治",
-        rarity: "稀有",
+        rarity: "R",
         probability: 15,
         imageUrl: "/images/sanji.jpg"
       },
       {
         name: "艾斯",
-        rarity: "史诗",
+        rarity: "SR",
         probability: 8,
         imageUrl: "/images/ace.jpg"
       },
       {
         name: "白胡子",
-        rarity: "传说",
+        rarity: "SSR",
         probability: 2,
         imageUrl: "/images/whitebeard.jpg"
       }
@@ -74,37 +74,37 @@ const blindBoxData = [
     items: [
       {
         name: "白雪公主",
-        rarity: "普通",
+        rarity: "N",
         probability: 25,
         imageUrl: "/images/snow-white.jpg"
       },
       {
         name: "灰姑娘",
-        rarity: "普通",
+        rarity: "N",
         probability: 25,
         imageUrl: "/images/cinderella.jpg"
       },
       {
         name: "贝儿",
-        rarity: "稀有",
+        rarity: "R",
         probability: 20,
         imageUrl: "/images/belle.jpg"
       },
       {
         name: "爱丽儿",
-        rarity: "稀有",
+        rarity: "R",
         probability: 15,
         imageUrl: "/images/ariel.jpg"
       },
       {
         name: "艾莎",
-        rarity: "史诗",
+        rarity: "SR",
         probability: 10,
         imageUrl: "/images/elsa.jpg"
       },
       {
         name: "安娜",
-        rarity: "传说",
+        rarity: "SSR",
         probability: 5,
         imageUrl: "/images/anna.jpg"
       }
@@ -120,37 +120,37 @@ const blindBoxData = [
     items: [
       {
         name: "钢铁侠",
-        rarity: "普通",
+        rarity: "N",
         probability: 25,
         imageUrl: "/images/ironman.jpg"
       },
       {
         name: "美国队长",
-        rarity: "普通",
+        rarity: "N",
         probability: 25,
         imageUrl: "/images/captain-america.jpg"
       },
       {
         name: "雷神",
-        rarity: "稀有",
+        rarity: "R",
         probability: 20,
         imageUrl: "/images/thor.jpg"
       },
       {
         name: "绿巨人",
-        rarity: "稀有",
+        rarity: "R",
         probability: 15,
         imageUrl: "/images/hulk.jpg"
       },
       {
         name: "蜘蛛侠",
-        rarity: "史诗",
+        rarity: "SR",
         probability: 10,
         imageUrl: "/images/spiderman.jpg"
       },
       {
         name: "奇异博士",
-        rarity: "传说",
+        rarity: "SSR",
         probability: 5,
         imageUrl: "/images/doctor-strange.jpg"
       }
@@ -166,37 +166,37 @@ const blindBoxData = [
     items: [
       {
         name: "亚瑟",
-        rarity: "普通",
+        rarity: "N",
         probability: 30,
         imageUrl: "/images/arthur.jpg"
       },
       {
         name: "妲己",
-        rarity: "普通",
+        rarity: "N",
         probability: 25,
         imageUrl: "/images/daji.jpg"
       },
       {
         name: "李白",
-        rarity: "稀有",
+        rarity: "R",
         probability: 20,
         imageUrl: "/images/libai.jpg"
       },
       {
         name: "貂蝉",
-        rarity: "稀有",
+        rarity: "R",
         probability: 15,
         imageUrl: "/images/diaochan.jpg"
       },
       {
         name: "韩信",
-        rarity: "史诗",
+        rarity: "SR",
         probability: 8,
         imageUrl: "/images/hanxin.jpg"
       },
       {
         name: "露娜",
-        rarity: "传说",
+        rarity: "SSR",
         probability: 2,
         imageUrl: "/images/luna.jpg"
       }
@@ -212,37 +212,37 @@ const blindBoxData = [
     items: [
       {
         name: "皮卡丘",
-        rarity: "普通",
+        rarity: "N",
         probability: 25,
         imageUrl: "/images/pikachu.jpg"
       },
       {
         name: "小火龙",
-        rarity: "普通",
+        rarity: "N",
         probability: 25,
         imageUrl: "/images/charmander.jpg"
       },
       {
         name: "杰尼龟",
-        rarity: "稀有",
+        rarity: "R",
         probability: 20,
         imageUrl: "/images/squirtle.jpg"
       },
       {
         name: "妙蛙种子",
-        rarity: "稀有",
+        rarity: "R",
         probability: 15,
         imageUrl: "/images/bulbasaur.jpg"
       },
       {
         name: "伊布",
-        rarity: "史诗",
+        rarity: "SR",
         probability: 10,
         imageUrl: "/images/eevee.jpg"
       },
       {
         name: "梦幻",
-        rarity: "传说",
+        rarity: "SSR",
         probability: 5,
         imageUrl: "/images/mew.jpg"
       }
@@ -258,37 +258,37 @@ const blindBoxData = [
     items: [
       {
         name: "鸣人",
-        rarity: "普通",
+        rarity: "N",
         probability: 30,
         imageUrl: "/images/naruto.jpg"
       },
       {
         name: "佐助",
-        rarity: "普通",
+        rarity: "N",
         probability: 25,
         imageUrl: "/images/sasuke.jpg"
       },
       {
         name: "小樱",
-        rarity: "稀有",
+        rarity: "R",
         probability: 20,
         imageUrl: "/images/sakura.jpg"
       },
       {
         name: "卡卡西",
-        rarity: "稀有",
+        rarity: "R",
         probability: 15,
         imageUrl: "/images/kakashi.jpg"
       },
       {
         name: "自来也",
-        rarity: "史诗",
+        rarity: "SR",
         probability: 8,
         imageUrl: "/images/jiraiya.jpg"
       },
       {
         name: "四代火影",
-        rarity: "传说",
+        rarity: "SSR",
         probability: 2,
         imageUrl: "/images/minato.jpg"
       }

@@ -8,8 +8,14 @@
       返回
     </div>
 
+    <!-- 加载状态 -->
+    <div v-if="isLoading" class="loading">
+      <div class="loading-spinner"></div>
+      <p>加载中...</p>
+    </div>
+
     <!-- 盲盒信息 -->
-    <div class="box-info" v-if="product">
+    <div class="box-info" v-if="!isLoading && product">
       <div class="box-image">
         <img :src="product.imageUrl" :alt="product.name" />
       </div>
@@ -22,7 +28,7 @@
     </div>
 
     <!-- 盲盒内容物 -->
-    <div class="items-section" v-if="product">
+    <div class="items-section" v-if="!isLoading && product">
       <h2>盲盒内容物</h2>
       <div class="items-grid">
         <div 
@@ -45,7 +51,7 @@
     </div>
 
     <!-- 抽奖按钮 -->
-    <div class="lottery-section">
+    <div class="lottery-section" v-if="!isLoading && product">
       <button 
         class="lottery-button" 
         @click="drawItem"
@@ -78,71 +84,81 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { blindBoxStore } from '../stores/blindBoxStore.js'
 import { userStore } from '../stores/userStore.js'
+import axios from 'axios'
 
 const route = useRoute()
 const router = useRouter()
 
 // 使用共享数据存储
 const product = computed(() => {
-  const id = parseInt(route.params.id)
-  return blindBoxStore.getProductById(id)
+  const id = route.params.id; // 不转换为整数，保持原始格式
+  console.log('BlindBoxDetail - 路由参数ID:', id, '类型:', typeof id);
+  const foundProduct = blindBoxStore.getProductById(id);
+  console.log('BlindBoxDetail - 找到的产品:', foundProduct);
+  return foundProduct;
 })
 
 const isDrawing = ref(false)
 const showDrawResult = ref(false)
 const drawnItem = ref(null)
+const isLoading = ref(true)
 
 // 获取稀有度样式类
 const getRarityClass = (rarity) => {
   const rarityMap = {
+    // 英文缩写
     'SSR': 'ssr',
     'SR': 'sr', 
     'R': 'r',
-    'N': 'n'
+    'N': 'n',
+    // 中文稀有度（向后兼容）
+    '传说': 'ssr',
+    '史诗': 'sr',
+    '稀有': 'r',
+    '普通': 'n'
   }
   return rarityMap[rarity] || 'n'
 }
 
-// 抽奖功能
-const drawItem = () => {
-  if (!product.value || !product.value.items) return
+// 抽奖功能 - 调用后端API
+const drawItem = async () => {
+  if (!product.value) return
   
   isDrawing.value = true
   
-  // 模拟抽奖延迟
-  setTimeout(() => {
-    const items = product.value.items
-    const random = Math.random() * 100
-    let currentProbability = 0
+  try {
+    // 使用 _id 或 id 字段
+    const productId = product.value._id || product.value.id;
+    console.log('抽奖 - 使用的产品ID:', productId);
     
-    for (const item of items) {
-      currentProbability += item.probability
-      if (random <= currentProbability) {
-        drawnItem.value = item
-        showDrawResult.value = true
-        isDrawing.value = false
-        
-        // 抽奖成功后创建订单
-        createOrderFromDraw(item)
-        break
-      }
+    if (!productId) {
+      throw new Error('产品ID不存在');
     }
-  }, 2000)
-}
-
-// 创建抽奖订单
-const createOrderFromDraw = (drawnItem) => {
-  const orderData = {
-    productId: product.value.id,
-    productName: product.value.name,
-    productImage: product.value.image,
-    price: product.value.price,
-    quantity: 1,
-    drawnItem: drawnItem,
-    status: 'pending_receipt' // 抽奖完成后直接设为待收货状态
+    
+    const response = await axios.post(`/api/v1/blind-boxes/${productId}/draw`)
+    
+    if (response.data.success) {
+      drawnItem.value = response.data.data.drawnItem
+      showDrawResult.value = true
+      
+      // 更新用户金币信息
+      const userInfo = JSON.parse(localStorage.getItem('user') || '{}')
+      userInfo.coins = response.data.data.remainingCoins
+      localStorage.setItem('user', JSON.stringify(userInfo))
+      
+      // 可以触发用户信息更新事件
+      window.dispatchEvent(new CustomEvent('userCoinsUpdated', { 
+        detail: { coins: response.data.data.remainingCoins } 
+      }))
+    } else {
+      alert(response.data.message || '抽奖失败')
+    }
+  } catch (error) {
+    console.error('抽奖失败:', error)
+    alert(error.response?.data?.message || '抽奖失败，请稍后再试')
+  } finally {
+    isDrawing.value = false
   }
-  
-  userStore.addOrder(orderData)
 }
 
 // 关闭结果弹窗
@@ -157,9 +173,73 @@ const goBack = () => {
 }
 
 // 组件挂载时获取盲盒数据
-onMounted(() => {
-  if (!product.value) {
-    router.push('/')
+onMounted(async () => {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    router.push("/login");
+    return;
+  }
+
+  // 首先检查本地store中是否已有数据
+  const localProduct = product.value;
+  if (localProduct) {
+    console.log('使用本地store数据:', localProduct);
+    isLoading.value = false;
+    return;
+  }
+
+  try {
+    // 从后端API获取产品数据
+    console.log('从API获取产品数据...');
+    const response = await fetch('/api/v1/blind-boxes', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      console.log('API返回的完整数据:', data);
+      if (data.success) {
+        const blindBoxes = data.data.blindBoxes || [];
+        console.log('API返回的盲盒数据:', blindBoxes);
+        console.log('盲盒数据长度:', blindBoxes.length);
+        
+        // 更新store中的数据
+        blindBoxStore.setProducts(blindBoxes);
+        console.log('API数据更新成功');
+        
+        // 立即检查更新后的store数据
+        const updatedProducts = blindBoxStore.getProducts();
+        console.log('更新后的store数据:', updatedProducts);
+        console.log('当前路由参数ID:', route.params.id);
+        
+        // 尝试查找当前产品
+        const currentProduct = blindBoxStore.getProductById(route.params.id);
+        console.log('查找到的当前产品:', currentProduct);
+      }
+    } else {
+      console.log('API响应失败，使用本地数据');
+    }
+  } catch (error) {
+    console.error('获取产品数据出错:', error);
+    console.log('API请求失败，使用本地数据');
+  } finally {
+    isLoading.value = false;
+    
+    // 检查产品是否存在（给一些时间让数据更新）
+    setTimeout(() => {
+      console.log('最终检查 - 当前product.value:', product.value);
+      console.log('最终检查 - 路由参数:', route.params);
+      console.log('最终检查 - store中的所有产品:', blindBoxStore.getProducts());
+      
+      if (!product.value) {
+        console.log('未找到产品，跳转回首页');
+        router.push('/home');
+      } else {
+        console.log('产品加载成功:', product.value);
+      }
+    }, 100);
   }
 })
 </script>
@@ -184,6 +264,35 @@ onMounted(() => {
 
 .back-button:hover {
   opacity: 0.8;
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+  color: white;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top: 4px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading p {
+  font-size: 16px;
+  margin: 0;
 }
 
 .box-info {

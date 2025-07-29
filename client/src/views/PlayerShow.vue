@@ -172,9 +172,10 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { userStore } from '../stores/userStore.js'
+import { blindBoxStore } from '../stores/blindBoxStore.js'
 
 const router = useRouter()
 
@@ -189,15 +190,21 @@ const newPost = reactive({
   blindBoxId: ''
 })
 
-// 可用的盲盒列表
-const availableBlindBoxes = ref([
-  { id: 1, name: '海贼王盲盒', price: 59.90, image: '/src/static/onepiece.jpg' },
-  { id: 2, name: '迪士尼公主盲盒', price: 69.90, image: '/src/static/disney.jpg' },
-  { id: 3, name: '漫威英雄盲盒', price: 79.90, image: '/src/static/marvel.jpg' }
-])
+// 从blindBoxStore获取可用的盲盒列表
+const availableBlindBoxes = computed(() => {
+  return blindBoxStore.getProducts().map(product => ({
+    id: product._id || product.id,
+    name: product.name,
+    price: product.price,
+    image: product.imageUrl
+  }))
+})
 
 // 初始化示例帖子数据
 const initializePosts = () => {
+  // 获取实际的盲盒数据
+  const actualBlindBoxes = blindBoxStore.getProducts()
+  
   posts.value = [
     {
       id: 1,
@@ -209,12 +216,12 @@ const initializePosts = () => {
       content: '今天抽到了超稀有的路飞！太开心了！这个海贼王盲盒真的太值了！',
       createTime: '2小时前',
       images: [],
-      blindBox: {
-        id: 1,
-        name: '海贼王盲盒',
-        price: 59.90,
-        image: '/src/static/onepiece.jpg'
-      },
+      blindBox: actualBlindBoxes[0] ? {
+        id: actualBlindBoxes[0]._id || actualBlindBoxes[0].id,
+        name: actualBlindBoxes[0].name,
+        price: actualBlindBoxes[0].price,
+        image: actualBlindBoxes[0].imageUrl
+      } : null,
       likes: 15,
       isLiked: false,
       comments: [
@@ -240,12 +247,12 @@ const initializePosts = () => {
       content: '艾莎公主太美了！这个迪士尼盲盒的质量真的很棒，推荐给大家！',
       createTime: '5小时前',
       images: [],
-      blindBox: {
-        id: 2,
-        name: '迪士尼公主盲盒',
-        price: 69.90,
-        image: '/src/static/disney.jpg'
-      },
+      blindBox: actualBlindBoxes[1] ? {
+        id: actualBlindBoxes[1]._id || actualBlindBoxes[1].id,
+        name: actualBlindBoxes[1].name,
+        price: actualBlindBoxes[1].price,
+        image: actualBlindBoxes[1].imageUrl
+      } : null,
       likes: 23,
       isLiked: true,
       comments: [
@@ -314,8 +321,14 @@ const sharePost = (postId) => {
   alert('分享功能待实现')
 }
 
+// 跳转到盲盒详情页
 const goToBlindBox = (blindBoxId) => {
-  router.push(`/blindbox/${blindBoxId}`)
+  console.log('PlayerShow - goToBlindBox called with ID:', blindBoxId)
+  if (blindBoxId) {
+    router.push(`/blindbox/${blindBoxId}`)
+  } else {
+    console.error('PlayerShow - Invalid blindBoxId:', blindBoxId)
+  }
 }
 
 const previewImage = (imageUrl) => {
@@ -362,7 +375,13 @@ const createPost = () => {
 
 // 生命周期
 onMounted(() => {
+  // 确保blindBoxStore数据已初始化
+  blindBoxStore.initializeData()
+  console.log('PlayerShow - blindBoxStore products:', blindBoxStore.getProducts())
+  
+  // 初始化帖子数据
   initializePosts()
+  console.log('PlayerShow - initialized posts:', posts.value)
 })
 </script>
 

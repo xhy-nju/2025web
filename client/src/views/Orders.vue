@@ -215,7 +215,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { userStore } from '../stores/userStore.js'
+import axios from 'axios'
 
 const router = useRouter()
 const route = useRoute()
@@ -224,10 +224,12 @@ const route = useRoute()
 const currentStatus = ref('all')
 const showOrderDetail = ref(false)
 const selectedOrder = ref(null)
+const orders = ref([])
+const loading = ref(false)
 
 // 状态标签配置
 const statusTabs = computed(() => {
-  const stats = userStore.getOrderStats()
+  const stats = getOrderStats()
   return [
     { value: 'all', label: '全部', count: stats.total },
     { value: 'pending_payment', label: '待付款', count: stats.pending_payment },
@@ -239,12 +241,58 @@ const statusTabs = computed(() => {
 
 // 计算属性
 const filteredOrders = computed(() => {
-  const orders = userStore.getOrders()
   if (currentStatus.value === 'all') {
-    return orders
+    return orders.value
   }
-  return userStore.getOrdersByStatus(currentStatus.value)
+  return orders.value.filter(order => order.status === currentStatus.value)
 })
+
+// 获取订单统计
+const getOrderStats = () => {
+  const stats = {
+    total: orders.value.length,
+    pending_payment: 0,
+    pending_shipment: 0,
+    pending_receipt: 0,
+    completed: 0
+  }
+  
+  orders.value.forEach(order => {
+    if (stats[order.status] !== undefined) {
+      stats[order.status]++
+    }
+  })
+  
+  return stats
+}
+
+// 从后端获取订单数据
+const fetchOrders = async () => {
+  try {
+    loading.value = true
+    const token = localStorage.getItem('token')
+    if (!token) {
+      router.push('/login')
+      return
+    }
+
+    const response = await axios.get('/api/v1/orders', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+
+    if (response.data.success) {
+      orders.value = response.data.data.orders || []
+    } else {
+      console.error('获取订单失败:', response.data.message)
+    }
+  } catch (error) {
+    console.error('获取订单出错:', error)
+  } finally {
+    loading.value = false
+  }
+}
 
 // 方法
 const switchStatus = (status) => {
@@ -268,9 +316,24 @@ const getStatusText = (status) => {
   return statusMap[status] || '未知状态'
 }
 
-const viewOrderDetail = (orderId) => {
-  selectedOrder.value = userStore.getOrderById(orderId)
-  showOrderDetail.value = true
+const viewOrderDetail = async (orderId) => {
+  try {
+    const token = localStorage.getItem('token')
+    const response = await axios.get(`/api/v1/orders/${orderId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+
+    if (response.data.success) {
+      selectedOrder.value = response.data.data
+      showOrderDetail.value = true
+    } else {
+      console.error('获取订单详情失败:', response.data.message)
+    }
+  } catch (error) {
+    console.error('获取订单详情出错:', error)
+  }
 }
 
 const closeOrderDetail = () => {
@@ -286,11 +349,27 @@ const payOrder = (orderId) => {
   }
 }
 
-const confirmReceipt = (orderId) => {
+const confirmReceipt = async (orderId) => {
   if (confirm('确认收货？收货后订单将完成。')) {
-    if (userStore.confirmReceipt(orderId)) {
-      alert('确认收货成功！')
-      closeOrderDetail()
+    try {
+      const token = localStorage.getItem('token')
+      const response = await axios.put(`/api/v1/orders/${orderId}/confirm`, {}, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.data.success) {
+        alert('确认收货成功！')
+        closeOrderDetail()
+        // 重新获取订单数据
+        await fetchOrders()
+      } else {
+        alert('确认收货失败: ' + response.data.message)
+      }
+    } catch (error) {
+      console.error('确认收货出错:', error)
+      alert('确认收货失败，请稍后重试')
     }
   }
 }
@@ -304,12 +383,15 @@ const handlePlayerShowClick = () => {
 }
 
 // 生命周期
-onMounted(() => {
+onMounted(async () => {
   // 从URL参数获取初始状态
   const status = route.query.status
   if (status && ['all', 'pending_payment', 'pending_shipment', 'pending_receipt', 'completed'].includes(status)) {
     currentStatus.value = status
   }
+  
+  // 获取订单数据
+  await fetchOrders()
 })
 </script>
 

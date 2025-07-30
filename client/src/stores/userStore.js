@@ -11,17 +11,17 @@ export const ORDER_STATUS = {
 export const useUserStore = defineStore('user', {
   state: () => ({
     userInfo: {
-      id: 1,
-      nickname: '盲盒爱好者',
-      avatar: 'data:image/svg+xml,%3Csvg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"%3E%3Ccircle cx="40" cy="40" r="40" fill="%23667eea"/%3E%3Ctext x="40" y="48" font-family="Arial" font-size="24" fill="white" text-anchor="middle"%3E用%3C/text%3E%3C/svg%3E',
-      phone: '138****8888',
-      email: 'user@example.com',
-      coupons: 5,
-      coins: 1280,
-      points: 3650
+      id: null,
+      nickname: '',
+      avatar: '',
+      phone: '',
+      email: '',
+      coupons: 0,
+      coins: 0,
+      points: 0
     },
     orders: [],
-    isLoggedIn: true
+    isLoggedIn: false
   }),
 
   getters: {
@@ -103,7 +103,7 @@ export const useUserStore = defineStore('user', {
     logout() {
       // 清除本地存储的token
       localStorage.removeItem('token')
-      localStorage.removeItem('adminToken')
+      localStorage.removeItem('user')
       
       // 重置用户信息为默认值
       Object.assign(this.userInfo, {
@@ -120,6 +120,52 @@ export const useUserStore = defineStore('user', {
       // 清空订单数据
       this.orders = []
       this.isLoggedIn = false
+    },
+
+    // 初始化用户状态（从localStorage恢复）
+    initializeFromStorage() {
+      const token = localStorage.getItem('token')
+      const userStr = localStorage.getItem('user')
+      
+      if (token && userStr) {
+        try {
+          const user = JSON.parse(userStr)
+          this.updateUserInfo({
+            id: user._id || user.id,
+            nickname: user.username || user.nickname,
+            avatar: user.avatar || 'data:image/svg+xml,%3Csvg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"%3E%3Ccircle cx="40" cy="40" r="40" fill="%23667eea"/%3E%3Ccircle cx="40" cy="32" r="12" fill="white"/%3E%3Cpath d="M20 65c0-11 9-20 20-20s20 9 20 20" fill="white"/%3E%3C/svg%3E',
+            phone: user.phone || '',
+            email: user.email || '',
+            coupons: user.coupons || 0,
+            coins: user.coins || 0,
+            points: user.points || 0
+          })
+          this.isLoggedIn = true
+        } catch (error) {
+          console.error('恢复用户状态失败:', error)
+          this.logout()
+        }
+      } else {
+        this.isLoggedIn = false
+      }
+    },
+
+    // 登录成功后更新状态
+    loginSuccess(userData, token) {
+      localStorage.setItem('token', token)
+      localStorage.setItem('user', JSON.stringify(userData))
+      
+      this.updateUserInfo({
+        id: userData._id || userData.id,
+        nickname: userData.username || userData.nickname,
+        avatar: userData.avatar || 'data:image/svg+xml,%3Csvg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"%3E%3Ccircle cx="40" cy="40" r="40" fill="%23667eea"/%3E%3Ccircle cx="40" cy="32" r="12" fill="white"/%3E%3Cpath d="M20 65c0-11 9-20 20-20s20 9 20 20" fill="white"/%3E%3C/svg%3E',
+        phone: userData.phone || '',
+        email: userData.email || '',
+        coupons: userData.coupons || 0,
+        coins: userData.coins || 0,
+        points: userData.points || 0
+      })
+      this.isLoggedIn = true
     }
   }
 })

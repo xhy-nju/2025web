@@ -94,6 +94,22 @@ const handleRegister = async () => {
     return;
   }
 
+  // 前端验证
+  if (username.value.length < 3 || username.value.length > 20) {
+    alert("用户名长度必须在3-20个字符之间");
+    return;
+  }
+
+  if (!/^[a-zA-Z0-9_\u4e00-\u9fa5]+$/.test(username.value)) {
+    alert("用户名只能包含字母、数字、下划线和中文");
+    return;
+  }
+
+  if (password.value.length < 6) {
+    alert("密码至少需要6个字符");
+    return;
+  }
+
   if (password.value !== confirmPassword.value) {
     alert("两次输入的密码不一致");
     return;
@@ -123,7 +139,16 @@ const handleRegister = async () => {
     }
   } catch (error) {
     console.error("注册错误:", error);
-    alert(error.response?.data?.message || "注册失败，请稍后再试");
+    
+    // 处理验证错误
+    if (error.response?.status === 400 && error.response?.data?.errors) {
+      const errorMessages = error.response.data.errors.map(err => err.msg).join('\n');
+      alert("注册失败：\n" + errorMessages);
+    } else if (error.response?.data?.message) {
+      alert("注册失败：" + error.response.data.message);
+    } else {
+      alert("注册失败，请稍后再试");
+    }
   }
 };
 

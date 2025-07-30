@@ -25,7 +25,7 @@ const userSchema = new mongoose.Schema({
   },
   avatar: {
     type: String,
-    default: ''
+    default: 'data:image/svg+xml,%3Csvg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg"%3E%3Ccircle cx="40" cy="40" r="40" fill="%23667eea"/%3E%3Ccircle cx="40" cy="32" r="12" fill="white"/%3E%3Cpath d="M20 65c0-11 9-20 20-20s20 9 20 20" fill="white"/%3E%3C/svg%3E'
   },
   role: {
     type: String,

@@ -50,9 +50,11 @@
 <script setup>
 import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
+import { useUserStore } from "@/stores/userStore";
 import axios from "axios";
 
 const router = useRouter();
+const userStore = useUserStore();
 const username = ref("");
 const password = ref("");
 const rememberMe = ref(false);
@@ -78,12 +80,9 @@ const handleLogin = async () => {
     console.log("登录响应数据:", res.data);
 
     if (res.data.success) {
-      // 保存token和用户信息
-      if (res.data.data.token) {
-        localStorage.setItem("token", res.data.data.token);
-        localStorage.setItem("user", JSON.stringify(res.data.data.user));
-        console.log("Token已保存:", res.data.data.token);
-      }
+      // 使用userStore的loginSuccess方法更新状态
+      userStore.loginSuccess(res.data.data.user, res.data.data.token);
+      console.log("用户状态已更新");
 
       // 登录成功后跳转到主页
       router.push("/home");
